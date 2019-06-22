@@ -1,9 +1,9 @@
-pub struct command {
-    pub c_type : commandType,
+pub struct Command {
+    pub c_type : CommandType,
     pub args : Vec<String>
 }
 
-pub enum commandType {
+pub enum CommandType {
     FS,
     FE,
     NEW,

@@ -1,8 +1,12 @@
 use std::env;
 
 mod filemanager;
-mod tokenizer;
-use tokenizer::command;
+mod instructionmanager {
+    pub mod tokenizer;
+    pub mod vm;
+    pub mod command;
+}
+use instructionmanager::tokenizer;
 
 fn main() {
 
