@@ -1,9 +1,11 @@
 use super::command;
+use std::collections::HashMap;
 
-pub fn tokenize(in_str : &String) -> Vec<command::Command> {
+pub fn tokenize(in_str : &String) -> (Vec<command::Command>, HashMap<&str, (usize,usize)>)  {
 
     let split_str = in_str.split("\n").collect::<Vec<_>>();
     let mut commands : Vec<command::Command> = Vec::new();
+    let mut f_list : HashMap<&str, (usize, usize)> = HashMap::new();
 
     for curr_str in split_str {
 
@@ -12,10 +14,35 @@ pub fn tokenize(in_str : &String) -> Vec<command::Command> {
 
         let curr_com_type : command::CommandType;
 
+        // map strings to commands
         match com_args[0] {
-            
-            "FS" => {curr_com_type = command::CommandType::FS},
-            "FE" => {curr_com_type = command::CommandType::FE},
+            "FS" => {
+                curr_com_type = command::CommandType::FS;
+
+                let mut i : (usize, usize);
+
+                match f_list.get(com_args[1]) {
+                    Some(val) => {i = *val},
+                    None => {i = (0,0)}
+                }
+
+                i.0 = commands.len() + 1;
+                f_list.insert(com_args[1], i);
+            },
+            "FE" => {
+                curr_com_type = command::CommandType::FE;
+
+                let mut i : (usize, usize);
+
+                match f_list.get(com_args[1]) {
+                    Some(val) => {i = *val},
+                    None => {i = (0,0)}
+                }
+                
+                i.1 = commands.len() + 1;
+                f_list.insert(com_args[1], i);
+                
+                },
             "NEW" => {curr_com_type = command::CommandType::NEW},
             "SET" => {curr_com_type = command::CommandType::SET},
             "PUSH" => {curr_com_type = command::CommandType::PUSH},
@@ -34,10 +61,12 @@ pub fn tokenize(in_str : &String) -> Vec<command::Command> {
             "XOR" => {curr_com_type = command::CommandType::XOR},
             "IFEQ" => {curr_com_type = command::CommandType::IFEQ},
             "JMP" => {curr_com_type = command::CommandType::JMP},
+            "SYS" => {curr_com_type = command::CommandType::SYS},
             "CALL" => {curr_com_type = command::CommandType::CALL},
             _ => {continue}
         }
 
+        // remove the command, keep the arguments
         com_args.remove(0);
 
         for arg in com_args {
@@ -53,5 +82,5 @@ pub fn tokenize(in_str : &String) -> Vec<command::Command> {
         commands.push(comm);
     } 
 
-    return commands;
+    return (commands, f_list);
 }

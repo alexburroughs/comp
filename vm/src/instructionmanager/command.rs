@@ -24,5 +24,6 @@ pub enum CommandType {
     XOR,
     IFEQ,
     JMP,
+    SYS,
     CALL
 }

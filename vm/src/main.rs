@@ -6,23 +6,27 @@ mod instructionmanager {
     pub mod vm;
     pub mod command;
 }
+
 use instructionmanager::tokenizer;
+use instructionmanager::vm;
 
 fn main() {
 
     let args: Vec<String> = env::args().collect();
 
     // check for at least input file and output file
-    if args.len() < 3 {
+    if args.len() < 2 {
         panic!("please provide a input filename and output filename as arguments");
     }
 
     let in_filename = &args[1];
-    let out_filename = &args[2];
 
     // load and unwrap file
     let code_string = filemanager::load_file(&in_filename).expect("error unwrapping file");
 
-    // get instructions
-    let instructions = tokenizer::tokenize(&code_string);
+    // get instructions and a map of functions
+    let (instructions, f_map) = tokenizer::tokenize(&code_string);
+
+    // run all commands
+    vm::run(instructions, f_map);
 }

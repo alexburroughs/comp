@@ -1,15 +1,7 @@
 pub enum ValueType {
-    NUM,
-    STR,
-    LIST
-}
-
-
-pub struct Value {
-    n_val : i32,
-    s_val : String,
-    l_val : Vec<Value>,
-    v_type : ValueType
+    NUM(f32),
+    STR(String),
+    LIST(Vec<ValueType>)
 }
 
 pub struct NumStack {
@@ -21,5 +13,5 @@ pub struct ScopeStack {
 }
 
 pub struct MemStack {
-    val : Vec<Value>
+    val : Vec<ValueType>
 }
