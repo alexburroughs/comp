@@ -40,7 +40,9 @@ impl Vm {
                     x = tmp.1;
                 },
                 command::CommandType::FE => {},
-                command::CommandType::NEW => {},
+                command::CommandType::NEW => {
+
+                },
                 command::CommandType::SET => {},
                 command::CommandType::PUSH => {},
                 command::CommandType::POP => {},
@@ -63,5 +65,4 @@ impl Vm {
             }
         }
     }
-
 }

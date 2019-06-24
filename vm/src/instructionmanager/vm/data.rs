@@ -40,4 +40,13 @@ impl MemStack {
             bos : 0
         }
     }
+
+    pub fn push(&mut self, v_type : ValueType) {
+        self.val.push(v_type);
+    }
+
+    pub fn set(&mut self, ind : usize, val : ValueType) {
+        self.val.get(ind).expect("Memory pointer doesn't exist");
+        self.val[ind] = val;
+    }
 }
