@@ -8,7 +8,7 @@ mod instructionmanager {
 }
 
 use instructionmanager::tokenizer;
-use instructionmanager::vm;
+use instructionmanager::vm as VirtualMachine;
 
 fn main() {
 
@@ -28,5 +28,6 @@ fn main() {
     let (instructions, f_map) = tokenizer::tokenize(&code_string);
 
     // run all commands
-    vm::run(instructions, f_map);
+    let mut vm = VirtualMachine::Vm::new();
+    vm.run(instructions, f_map);
 }
