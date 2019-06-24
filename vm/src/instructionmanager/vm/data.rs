@@ -5,7 +5,7 @@ pub enum ValueType {
 }
 
 pub struct NumStack {
-    val : Vec<i32>
+    val : Vec<i32>,
 }
 
 pub struct ScopeStack {
@@ -17,6 +17,9 @@ pub struct MemStack {
     bos : i32
 }
 
+// Number Stack
+// 
+// purpose: 
 impl NumStack {
     pub fn new() -> NumStack {
         NumStack {

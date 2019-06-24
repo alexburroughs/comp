@@ -17,6 +17,7 @@ pub struct Vm {
 impl Vm {
 
     pub fn new() -> Vm {
+
         Vm {
             mem_stack : MemStack::new(),
             scope_stack : ScopeStack::new(),

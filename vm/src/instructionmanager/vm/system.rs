@@ -6,8 +6,10 @@ struct System<'a> {
 
 impl<'a> System<'a> {
 
-    fn new(&mut self, stack : &'a mut data::NumStack) {
-        self.num_stack = stack;
+    fn new( stack : &'a mut data::NumStack) -> System<'a>{
+        System {
+            num_stack : stack
+        }
     }
 
     fn f_run(&mut self, args : Vec<String>) {
