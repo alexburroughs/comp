@@ -5,7 +5,7 @@ pub enum ValueType {
 }
 
 pub struct NumStack {
-    val : Vec<i32>,
+    val : Vec<f32>,
 }
 
 pub struct ScopeStack {
@@ -14,7 +14,7 @@ pub struct ScopeStack {
 
 pub struct MemStack {
     val : Vec<ValueType>,
-    bos : i32
+    bos : usize
 }
 
 // Number Stack
@@ -25,6 +25,57 @@ impl NumStack {
         NumStack {
             val : Vec::new()
         } 
+    }
+
+    pub fn add(&mut self) {
+        let first = self.val.pop().expect("Error: empty stack");
+        let second = self.val.pop().expect("Error: empty stack");   
+
+        self.val.push(first + second);
+    }
+
+    pub fn sub(&mut self) {
+        let first = self.val.pop().expect("Error: empty stack");
+        let second = self.val.pop().expect("Error: empty stack");   
+
+        self.val.push(second - first);
+    }
+
+    pub fn div(&mut self) {
+        let first = self.val.pop().expect("Error: empty stack");
+        let second = self.val.pop().expect("Error: empty stack");   
+
+        self.val.push(second / first);
+    }
+
+    pub fn mul(&mut self) {
+        let first = self.val.pop().expect("Error: empty stack");
+        let second = self.val.pop().expect("Error: empty stack");   
+
+        self.val.push(first * second);
+    }
+
+    pub fn modulus(&mut self) {
+        let first = self.val.pop().expect("Error: empty stack");
+        let second = self.val.pop().expect("Error: empty stack");   
+
+        self.val.push(second % first);
+    }
+
+    pub fn push(&mut self, mem_stack : &MemStack, ind : usize) {
+        let entry = match mem_stack.val[ind + mem_stack.bos] {
+            ValueType::NUM(var) => {var},
+            _ => {panic!("")}
+        };
+
+        self.val.push(entry);
+    }
+
+    pub fn pop(&mut self, mem_stack : &mut MemStack, ind : usize) {
+        
+        let entry = self.val.pop().expect("Error: empty stack");
+
+        mem_stack.val[ind + mem_stack.bos] = ValueType::NUM(entry);
     }
 }
 
