@@ -21,6 +21,8 @@ pub fn tokenize(in_str : &String) -> (Vec<command::Command>, HashMap<&str, (usiz
 
         let curr_com_type : command::CommandType;
 
+        //println!("{}", com_args[0]);
+
         // map strings to commands
         match com_args[0] {
             
@@ -35,7 +37,7 @@ pub fn tokenize(in_str : &String) -> (Vec<command::Command>, HashMap<&str, (usiz
                     None => {i = (0,0)}
                 }
 
-                i.0 = commands.len() + 1;
+                i.0 = commands.len();
                 f_list.insert(com_args[1], i);
             },
 
@@ -50,7 +52,7 @@ pub fn tokenize(in_str : &String) -> (Vec<command::Command>, HashMap<&str, (usiz
                     None => {i = (0,0)}
                 }
                 
-                i.1 = commands.len() + 1;
+                i.1 = commands.len();
                 f_list.insert(com_args[1], i);
                 
                 },
@@ -76,11 +78,12 @@ pub fn tokenize(in_str : &String) -> (Vec<command::Command>, HashMap<&str, (usiz
             "CALL" => {curr_com_type = command::CommandType::CALL},
             "ADDR" => {             
                 curr_com_type = command::CommandType::ADDR;
-                let tmp = commands.len() + 1;
-                a_list.insert(com_args[0], tmp);
+                let tmp = commands.len();
+                a_list.insert(com_args[1], tmp);
             },
             "RET" => {curr_com_type = command::CommandType::RET},
-            _ => {panic!("Error: Invalid command");}
+            "" => {continue}
+            _ => {panic!("Error: Invalid command \"{}\" ", com_args[0]);}
         }
 
         // remove the command, keep the arguments

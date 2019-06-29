@@ -9,7 +9,8 @@ pub struct NumStack {
 }
 
 pub struct ScopeStack {
-    val : Vec<usize>
+    val : Vec<usize>,
+    ins : Vec<usize>
 }
 
 pub struct MemStack {
@@ -145,22 +146,25 @@ impl NumStack {
 impl ScopeStack {
     pub fn new() -> ScopeStack {
         ScopeStack {
-            val : Vec::new()
+            val : Vec::new(),
+            ins : Vec::new()
         } 
     }
 
-    pub fn push(&mut self, mem_stack : &mut MemStack) {
+    pub fn push(&mut self, mem_stack : &mut MemStack, instruction : usize) {
         self.val.push(mem_stack.bos);
         mem_stack.bos = mem_stack.val.len() - mem_stack.arg_count;
         mem_stack.arg_count = 0;
+        self.ins.push(instruction);
     }
 
-    pub fn pop(&mut self, mem_stack : &mut MemStack) {
+    pub fn pop(&mut self, mem_stack : &mut MemStack) -> usize {
         let pop_to = mem_stack.bos;
         mem_stack.bos = self.val.pop().expect("Error: Can't pop empty scope stack");
         while mem_stack.val.len() < pop_to {
             mem_stack.val.pop();
         }
+        self.ins.pop().expect("Error: Empty instruction in scope stack")
     }
 }
 

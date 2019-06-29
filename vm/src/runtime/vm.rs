@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::string::ToString;
 use super::command;
 
 mod data;
@@ -35,6 +36,8 @@ impl Vm {
 
             let com = &commands[x];
 
+            //println!("{} : {}", x, com.c_type.to_string());
+
             match com.c_type {
                 command::CommandType::FS => {
                     let tmp = (f_map
@@ -46,12 +49,12 @@ impl Vm {
                     x = tmp.1;
                 },
                 command::CommandType::FE => {
-                    match com.args.get(0) {
+                    match com.args.get(1) {
                         Some(val) => {self.ret = Some(self.mem_stack.get_ret(val.parse().expect("Error: Invalid return argument")))},
                         None => {self.ret = None}
                     }
 
-                    self.scope_stack.pop(&mut self.mem_stack);
+                    x = self.scope_stack.pop(&mut self.mem_stack);
                 },
                 command::CommandType::NEW => {
                     self.mem_stack.push(match com.args
@@ -152,6 +155,7 @@ impl Vm {
                     sys.f_run(&com.args);
                 },
                 command::CommandType::CALL => {
+                    let last_x = x;
                     let tmp = (f_map
                         .get(com.args[0]
                         .as_str()))
@@ -159,16 +163,17 @@ impl Vm {
                         .clone();
 
                     x = tmp.0;
-
-                    for y in 1..com.args.len()-1 {
+                    for y in 1..com.args.len() {
                         self.mem_stack.push_arg(com.args.get(y).expect("Error: can't unwrap call argument").parse().expect("Error: Invalid argument to call"));
                     }
 
-                    self.scope_stack.push(&mut self.mem_stack);
+                    self.scope_stack.push(&mut self.mem_stack, last_x);
                 },
                 command::CommandType::RET => {},
-                command::CommandType::ADDR => {continue}
+                command::CommandType::ADDR => {}
             }
+
+            x+=1;
         }
     }
 }
