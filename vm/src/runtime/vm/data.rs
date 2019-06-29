@@ -190,4 +190,8 @@ impl MemStack {
     pub fn get_ret(&self, ind : usize) -> ValueType {
         return self.val.get(ind).expect("Error: Invalid return memory pointer").clone();
     }
+
+    pub fn get(&self, ind : usize) -> ValueType {
+        self.val.get(ind + self.bos).expect("Error: Can't retrive pointer").clone()
+    }
 }

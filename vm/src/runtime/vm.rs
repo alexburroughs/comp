@@ -147,7 +147,10 @@ impl Vm {
                 command::CommandType::JMP => {
                     x = a_map.get(&com.args[0].as_str()).expect("Error: invalid address").clone();
                 },
-                command::CommandType::SYS => {},
+                command::CommandType::SYS => {
+                    let mut sys = system::System::new(&mut self.mem_stack);
+                    sys.f_run(&com.args);
+                },
                 command::CommandType::CALL => {
                     let tmp = (f_map
                         .get(com.args[0]
