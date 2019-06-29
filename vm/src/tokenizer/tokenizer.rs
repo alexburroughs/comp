@@ -1,4 +1,4 @@
-use super::command;
+use super::super::runtime::command;
 use std::collections::HashMap;
 
 pub fn tokenize(in_str : &String) -> (Vec<command::Command>, HashMap<&str, (usize,usize)>)  {

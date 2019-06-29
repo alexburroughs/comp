@@ -1,14 +1,18 @@
 use std::env;
 
 mod filemanager;
-mod instructionmanager {
-    pub mod tokenizer;
+mod runtime {
     pub mod vm;
     pub mod command;
 }
 
-use instructionmanager::tokenizer;
-use instructionmanager::vm as VirtualMachine;
+mod tokenizer {
+    pub mod tokenizer;
+}
+
+use tokenizer::tokenizer as token;
+
+use runtime::vm as VirtualMachine;
 
 fn main() {
 
@@ -25,7 +29,7 @@ fn main() {
     let code_string = filemanager::load_file(&in_filename).expect("error unwrapping file");
 
     // get instructions and a map of functions
-    let (instructions, f_map) = tokenizer::tokenize(&code_string);
+    let (instructions, f_map) = token::tokenize(&code_string);
 
     // run all commands
     let mut vm = VirtualMachine::Vm::new();
