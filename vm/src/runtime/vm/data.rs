@@ -17,9 +17,6 @@ pub struct MemStack {
     bos : usize
 }
 
-// Number Stack
-// 
-// purpose: 
 impl NumStack {
     pub fn new() -> NumStack {
         NumStack {
@@ -62,6 +59,61 @@ impl NumStack {
         self.val.push(second % first);
     }
 
+    pub fn cmp(&mut self) {
+        let first = self.val.pop().expect("Error: empty stack");
+        let second = self.val.pop().expect("Error: empty stack");
+
+        self.val.push(if second == first {1.0} else {0.0}); 
+    }
+
+    pub fn cmpg(&mut self) {
+        let first = self.val.pop().expect("Error: empty stack");
+        let second = self.val.pop().expect("Error: empty stack");
+        
+        self.val.push(if second > first {1.0} else {0.0}); 
+    }
+
+    pub fn cmpl(&mut self) {
+        let first = self.val.pop().expect("Error: empty stack");
+        let second = self.val.pop().expect("Error: empty stack");
+        
+        self.val.push(if second < first {1.0} else {0.0}); 
+
+    }
+
+    pub fn not(&mut self) {
+        let first = self.val.pop().expect("Error: empty stack");
+        
+        self.val.push(if first == 1.0 {0.0} else {1.0}); 
+    }
+
+    pub fn and(&mut self) {
+        let first = self.val.pop().expect("Error: empty stack");
+        let second = self.val.pop().expect("Error: empty stack");
+        
+        self.val.push(if second == 1.0 && first == 1.0 {1.0} else {0.0});
+    }
+
+    pub fn or(&mut self) {
+        let first = self.val.pop().expect("Error: empty stack");
+        let second = self.val.pop().expect("Error: empty stack");
+        
+        self.val.push(if second == 1.0 || first == 1.0 {1.0} else {0.0});
+    } 
+
+    pub fn xor(&mut self) {
+        let first = self.val.pop().expect("Error: empty stack");
+        let second = self.val.pop().expect("Error: empty stack");
+        
+        self.val.push(if (second == 1.0 && first == 0.0) || (second == 0.0 && first == 1.0) {1.0} else {0.0});
+    }
+
+    pub fn ifeq(&mut self) -> bool {
+        let first = self.val.pop().expect("Error: empty stack");
+
+        first == 1.0
+    }
+
     pub fn push(&mut self, mem_stack : &MemStack, ind : usize) {
         let entry = match mem_stack.val[ind + mem_stack.bos] {
             ValueType::NUM(var) => {var},
@@ -84,6 +136,14 @@ impl ScopeStack {
         ScopeStack {
             val : Vec::new()
         } 
+    }
+
+    pub fn push(mem_stack : &mut MemStack) {
+
+    }
+
+    pub fn pop(mem_stack : &mut MemStack) {
+
     }
 }
 

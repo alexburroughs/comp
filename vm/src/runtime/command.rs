@@ -25,5 +25,6 @@ pub enum CommandType {
     IFEQ,
     JMP,
     SYS,
-    CALL
+    CALL,
+    ADDR
 }

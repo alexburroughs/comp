@@ -29,9 +29,9 @@ fn main() {
     let code_string = filemanager::load_file(&in_filename).expect("error unwrapping file");
 
     // get instructions and a map of functions
-    let (instructions, f_map) = token::tokenize(&code_string);
+    let (instructions, f_map, a_map) = token::tokenize(&code_string);
 
     // run all commands
     let mut vm = VirtualMachine::Vm::new();
-    vm.run(instructions, f_map);
+    vm.run(instructions, f_map, a_map);
 }

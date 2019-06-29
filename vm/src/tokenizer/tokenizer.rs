@@ -1,14 +1,21 @@
 use super::super::runtime::command;
 use std::collections::HashMap;
+use std::str;
 
-pub fn tokenize(in_str : &String) -> (Vec<command::Command>, HashMap<&str, (usize,usize)>)  {
+pub fn tokenize(in_str : &String) -> (Vec<command::Command>, HashMap<&str, (usize,usize)>, HashMap<&str, usize>)  {
 
+    // seperate the code into commands
     let split_str = in_str.split("\n").collect::<Vec<_>>();
+
+    // final list of commands and function map
     let mut commands : Vec<command::Command> = Vec::new();
     let mut f_list : HashMap<&str, (usize, usize)> = HashMap::new();
+    let mut a_list : HashMap<&str, usize> = HashMap::new();
 
+    // loop through each line
     for curr_str in split_str {
 
+        // seperate command and arguments
         let mut com_args = curr_str.split(" ").collect::<Vec<_>>();
         let mut arg_list : Vec<String> = Vec::new();
 
@@ -16,6 +23,8 @@ pub fn tokenize(in_str : &String) -> (Vec<command::Command>, HashMap<&str, (usiz
 
         // map strings to commands
         match com_args[0] {
+            
+            // add function start to the function map
             "FS" => {
                 curr_com_type = command::CommandType::FS;
 
@@ -29,6 +38,8 @@ pub fn tokenize(in_str : &String) -> (Vec<command::Command>, HashMap<&str, (usiz
                 i.0 = commands.len() + 1;
                 f_list.insert(com_args[1], i);
             },
+
+            // add function end to the function map
             "FE" => {
                 curr_com_type = command::CommandType::FE;
 
@@ -63,12 +74,18 @@ pub fn tokenize(in_str : &String) -> (Vec<command::Command>, HashMap<&str, (usiz
             "JMP" => {curr_com_type = command::CommandType::JMP},
             "SYS" => {curr_com_type = command::CommandType::SYS},
             "CALL" => {curr_com_type = command::CommandType::CALL},
-            _ => {continue}
+            "ADDR" => {             
+                curr_com_type = command::CommandType::ADDR;
+                let tmp = commands.len() + 1;
+                a_list.insert(com_args[0], tmp);
+            },
+            _ => {panic!("Error: Invalid command");}
         }
 
         // remove the command, keep the arguments
         com_args.remove(0);
 
+        // add the arguments to the command object
         for arg in com_args {
             let tmp : String = String::from(arg);
             arg_list.push(tmp.clone());
@@ -82,5 +99,5 @@ pub fn tokenize(in_str : &String) -> (Vec<command::Command>, HashMap<&str, (usiz
         commands.push(comm);
     } 
 
-    return (commands, f_list);
+    return (commands, f_list, a_list);
 }
