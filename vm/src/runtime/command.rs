@@ -26,5 +26,6 @@ pub enum CommandType {
     JMP,
     SYS,
     CALL,
-    ADDR
+    ADDR,
+    RET
 }

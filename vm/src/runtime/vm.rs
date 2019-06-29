@@ -37,16 +37,72 @@ impl Vm {
 
             match com.c_type {
                 command::CommandType::FS => {
-                    let tmp = (f_map.get(com.args[0].as_str())).expect("error unwrapping function").clone();
+                    let tmp = (f_map
+                        .get(com.args[0]
+                        .as_str()))
+                        .expect("error unwrapping function")
+                        .clone();
+
                     x = tmp.1;
                 },
-                command::CommandType::FE => {},
-                command::CommandType::NEW => {
+                command::CommandType::FE => {
+                    match com.args.get(0) {
+                        Some(val) => {self.ret = Some(self.mem_stack.get_ret(val.parse().expect("Error: Invalid return argument")))},
+                        None => {self.ret = None}
+                    }
 
+                    self.scope_stack.pop(&mut self.mem_stack);
                 },
-                command::CommandType::SET => {},
-                command::CommandType::PUSH => {},
-                command::CommandType::POP => {},
+                command::CommandType::NEW => {
+                    self.mem_stack.push(match com.args
+                        .get(0)
+                        .expect("Error: Invalid number of arguments to new")
+                        .as_str() {
+                            "NUM" => {ValueType::NUM(0.0)},
+                            "STR" => {ValueType::STR(String::from(""))},
+                            "LIST" => {ValueType::LIST(Vec::new())},
+                            _ => {panic!("Error: Invalid type argument to new")}
+                    });
+                },
+                command::CommandType::SET => {
+                    self.mem_stack.set(com.args
+                        .get(0)
+                        .expect("Error: Invalid number of arguments to set")
+                        .parse()
+                        .expect("Error: Invalid argument to set"),
+                        match com.args.get(1).expect("Error: Invalid arguments to set").as_str() {
+                            "NUM" => {
+                                ValueType::NUM(com.args
+                                    .get(2)
+                                    .expect("Error: Invalid number of arguments to set")
+                                    .parse()
+                                    .expect("Error: Invalid number of arguments to set")
+                                )
+                            },
+                            "STR" => {
+                                ValueType::STR(com.args
+                                    .get(2)
+                                    .expect("Error: Invalid number of arguments to set")
+                                    .clone())
+                            },
+                            _ => {panic!("Error: Invalid type argument to set")}
+                        }
+                    );
+                },
+                command::CommandType::PUSH => {
+                    self.num_stack.push(&self.mem_stack, com.args
+                        .get(0)
+                        .expect("Error: Invalid number of arguments to push")
+                        .parse()
+                        .expect("Error: Invalid argument to push"))
+                },
+                command::CommandType::POP => {
+                    self.num_stack.pop(&mut self.mem_stack, com.args
+                        .get(0)
+                        .expect("Error: Invalid number of arguments to pop")
+                        .parse()
+                        .expect("Error: Invalid argument to pop"))
+                },
                 command::CommandType::ADD => {
                     self.num_stack.add();
                 },
@@ -92,8 +148,23 @@ impl Vm {
                     x = a_map.get(&com.args[0].as_str()).expect("Error: invalid address").clone();
                 },
                 command::CommandType::SYS => {},
-                command::CommandType::CALL => {},
-                command::CommandType::ADDR => {}
+                command::CommandType::CALL => {
+                    let tmp = (f_map
+                        .get(com.args[0]
+                        .as_str()))
+                        .expect("error unwrapping function")
+                        .clone();
+
+                    x = tmp.0;
+
+                    for y in 1..com.args.len()-1 {
+                        self.mem_stack.push_arg(com.args.get(y).expect("Error: can't unwrap call argument").parse().expect("Error: Invalid argument to call"));
+                    }
+
+                    self.scope_stack.push(&mut self.mem_stack);
+                },
+                command::CommandType::RET => {},
+                command::CommandType::ADDR => {continue}
             }
         }
     }

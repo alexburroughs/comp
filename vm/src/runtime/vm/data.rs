@@ -14,7 +14,18 @@ pub struct ScopeStack {
 
 pub struct MemStack {
     val : Vec<ValueType>,
-    bos : usize
+    bos : usize,
+    arg_count : usize
+}
+
+impl Clone for ValueType {
+    fn clone(&self) -> ValueType {
+        match self {
+            ValueType::NUM(val) => {ValueType::NUM(val.clone())},
+            ValueType::STR(val) => {ValueType::STR(val.clone())},
+            ValueType::LIST(val) => {ValueType::LIST(val.to_vec())}
+        }
+    }
 }
 
 impl NumStack {
@@ -138,12 +149,18 @@ impl ScopeStack {
         } 
     }
 
-    pub fn push(mem_stack : &mut MemStack) {
-
+    pub fn push(&mut self, mem_stack : &mut MemStack) {
+        self.val.push(mem_stack.bos);
+        mem_stack.bos = mem_stack.val.len() - mem_stack.arg_count;
+        mem_stack.arg_count = 0;
     }
 
-    pub fn pop(mem_stack : &mut MemStack) {
-
+    pub fn pop(&mut self, mem_stack : &mut MemStack) {
+        let pop_to = mem_stack.bos;
+        mem_stack.bos = self.val.pop().expect("Error: Can't pop empty scope stack");
+        while mem_stack.val.len() < pop_to {
+            mem_stack.val.pop();
+        }
     }
 }
 
@@ -151,7 +168,8 @@ impl MemStack {
     pub fn new() -> MemStack {
         MemStack {
             val : Vec::new(),
-            bos : 0
+            bos : 0,
+            arg_count : 0
         }
     }
 
@@ -160,7 +178,16 @@ impl MemStack {
     }
 
     pub fn set(&mut self, ind : usize, val : ValueType) {
-        self.val.get(ind).expect("Memory pointer doesn't exist");
-        self.val[ind] = val;
+        self.val.get(ind).expect("Error: Memory pointer doesn't exist");
+        self.val[ind + self.bos] = val;
+    }
+
+    pub fn push_arg(&mut self, ind : usize) {
+        self.push(self.val.get(ind + self.bos).expect("Error: Memory pointer to param doesn't exist").clone());
+        self.arg_count += 1;
+    }
+
+    pub fn get_ret(&self, ind : usize) -> ValueType {
+        return self.val.get(ind).expect("Error: Invalid return memory pointer").clone();
     }
 }
