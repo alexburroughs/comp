@@ -3,22 +3,35 @@ use super::data;
 use std::io;
 
 pub struct System<'a> {
-    mem_stack : &'a mut data::MemStack
+    mem_stack : &'a mut data::MemStack,
+    num_stack : &'a mut data::NumStack
 }
 
 impl<'a> System<'a> {
 
-    pub fn new( stack : &'a mut data::MemStack) -> System<'a>{
+    pub fn new( m_stack : &'a mut data::MemStack, n_stack : &'a mut data::NumStack) -> System<'a>{
         System {
-            mem_stack : stack
+            mem_stack : m_stack,
+            num_stack : n_stack
         }
     }
 
     pub fn f_run(&mut self, args : &Vec<String>) {
         //println!("{}", args[0]);
-        match args.get(0).expect("Error: Invalid amount of arguments to system call").as_str() {
-            "PRINT" => {self.f_print(args.get(1).expect("Error: Invalid number of arguements to print").parse().expect("Error: Invalid argument to print"))},
-            "IN" => {self.f_in(args.get(1).expect("Error: Invalid number of arguements to in").parse().expect("Error: Invalid argument to in"))},
+        match args.get(0)
+                .expect("Error: Invalid amount of arguments to system call")
+                .as_str() {
+
+            "PRINT" => {
+                self.f_print(args.get(1)
+                    .expect("Error: Invalid number of arguements to print")
+                    .parse()
+                    .expect("Error: Invalid argument to print"))},
+            "IN" => { 
+                self.f_in(args.get(1)
+                    .expect("Error: Invalid number of arguements to in")
+                    .parse()
+                    .expect("Error: Invalid argument to in"))},
             _ => {panic!("Error: Invalid system call")}
         }
     }

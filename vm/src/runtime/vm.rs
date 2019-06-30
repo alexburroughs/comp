@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::string::ToString;
+//use std::string::ToString;
 use super::command;
 
 mod data;
@@ -151,7 +151,7 @@ impl Vm {
                     x = a_map.get(&com.args[0].as_str()).expect("Error: invalid address").clone();
                 },
                 command::CommandType::SYS => {
-                    let mut sys = system::System::new(&mut self.mem_stack);
+                    let mut sys = system::System::new(&mut self.mem_stack, &mut self.num_stack);
                     sys.f_run(&com.args);
                 },
                 command::CommandType::CALL => {
