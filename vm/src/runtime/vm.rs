@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-//use std::string::ToString;
+use std::string::ToString;
 use super::command;
 
 mod data;
@@ -87,6 +87,9 @@ impl Vm {
                                     .get(2)
                                     .expect("Error: Invalid number of arguments to set")
                                     .clone())
+                            },
+                            "RET" => {
+                                self.ret.clone().expect("Error: Return value is null")
                             },
                             _ => {panic!("Error: Invalid type argument to set")}
                         }
