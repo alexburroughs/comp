@@ -1,5 +1,18 @@
 use std::env;
 
+
+pub mod tokenizer {
+    pub mod tokenizer;
+}
+
+pub mod ast {
+    pub mod ast;
+}
+
+use ast::ast as SyntaxTree;
+
+use tokenizer::tokenizer as Token;
+
 mod filemanager;
 
 fn main() {
@@ -20,5 +33,9 @@ fn main() {
     match code_opt {
         Some(x) => code_string = x,
         None => panic!("error unwrapping file"),
-    }
-}
+    };
+
+    let tok_list = Token::tokenize(code_string);
+
+    let tree = SyntaxTree::AST::new();
+}   

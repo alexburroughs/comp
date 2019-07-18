@@ -1,0 +1,1 @@
+/home/alex/Documents/github/comp/compilers/comp/target/debug/comp-test: /home/alex/Documents/github/comp/compilers/comp/src/filemanager/mod.rs /home/alex/Documents/github/comp/compilers/comp/src/main.rs
