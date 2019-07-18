@@ -1,9 +1,9 @@
 # No Name Interpreter
 
-### Description
+### Description:
 
-### VM
+### VM:
 
 #### Commands
 
-### Language
+### Language:
