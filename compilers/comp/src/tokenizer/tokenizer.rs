@@ -1,7 +1,51 @@
 
 pub struct Token {
-    t_type : TokenType,
-    name : Option<String>
+    pub t_type : TokenType,
+    pub name : Option<String>
+}
+
+impl Clone for Token {
+    fn clone(&self) -> Token {
+        Token {
+            t_type : match self.t_type {
+                TokenType::IF => {TokenType::IF},
+                TokenType::ELSE => {TokenType::ELSE},
+                TokenType::WHILE => {TokenType::WHILE},
+                TokenType::NUM => {TokenType::NUM},
+                TokenType::STR => {TokenType::STR},
+                TokenType::LIST => {TokenType::LIST},
+                TokenType::OPENBLOCK => {TokenType::OPENBLOCK},
+                TokenType::CLOSEBLOCK => {TokenType::CLOSEBLOCK},
+                TokenType::OPENBRACKET => {TokenType::OPENBRACKET},
+                TokenType::CLOSEBRACKET => {TokenType::CLOSEBRACKET},
+                TokenType::SEMICOLON => {TokenType::SEMICOLON},
+                TokenType::COMMA => {TokenType::COMMA},
+                TokenType::FUNCTION => {TokenType::FUNCTION},
+                TokenType::IDENTIFIER => {TokenType::IDENTIFIER},
+                TokenType::GOTO => {TokenType::GOTO},
+                TokenType::ADDR => {TokenType::ADDR},
+                TokenType::ASSIGN => {TokenType::ASSIGN},
+                TokenType::EQUAL => {TokenType::EQUAL},
+                TokenType::GREATER => {TokenType::GREATER},
+                TokenType::LESS => {TokenType::LESS},
+                TokenType::GREATEREQ => {TokenType::GREATEREQ},
+                TokenType::LESSEQ => {TokenType::LESSEQ},
+                TokenType::NOT => {TokenType::NOT},
+                TokenType::NOTEQ => {TokenType::NOTEQ},
+                TokenType::AND => {TokenType::AND},
+                TokenType::OR => {TokenType::OR},
+                TokenType::XOR => {TokenType::XOR},
+                TokenType::MOD => {TokenType::MOD},
+                TokenType::ADD => {TokenType::ADD},
+                TokenType::SUB => {TokenType::SUB},
+                TokenType::MUL => {TokenType::MUL},
+                TokenType::DIV => {TokenType::DIV},
+                TokenType::STRING => {TokenType::STRING},
+                TokenType::NUMBER => {TokenType::NUMBER}
+            },
+            name : self.name.clone()
+        }
+    }
 }
 
 pub enum TokenType {
@@ -39,6 +83,15 @@ pub enum TokenType {
     DIV,
     STRING,
     NUMBER
+}
+
+impl TokenType {
+    pub fn is_openblock(&self) -> bool {
+        match self {
+            TokenType::OPENBLOCK => {true},
+            _ => {false}
+        }
+    }
 }
 
 fn match_next(list : &Vec<char>, index : usize, op : &str) -> bool {
