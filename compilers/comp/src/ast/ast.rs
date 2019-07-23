@@ -5,6 +5,20 @@ fn advance(tokens : &Vec<Token::Token>, index : &mut usize) -> Token::Token {
     tokens[*index].clone()
 }
 
+fn match_expr(tokens : &Vec<Token::Token>, index : usize) -> Vec<Token::Token> {
+
+    let mut i = index;
+    let mut new_vec : Vec<Token::Token> = Vec::new();
+    loop {
+        new_vec.push(tokens[i].clone());
+        i+=1;
+        
+        match tokens[i].t_type { Token::TokenType::SEMICOLON => {break}, _ => {}}
+    }
+
+    new_vec
+}
+
 pub enum ValueType {
     STATEMENT,
     EXPRESSION,
@@ -27,6 +41,33 @@ pub enum ValueType {
     STR,
 }
 
+impl Clone for ValueType {
+    fn clone(&self) -> ValueType {
+
+        match self {
+            ValueType::IF => {ValueType::IF},
+            ValueType::ELSE => {ValueType::ELSE},
+            ValueType::WHILE => {ValueType::WHILE},
+            ValueType::NUM => {ValueType::NUM},
+            ValueType::STR => {ValueType::STR},
+            ValueType::STATEMENT => {ValueType::STATEMENT},
+            ValueType::EXPRESSION => {ValueType::EXPRESSION},
+            ValueType::OPERATOR => {ValueType::OPERATOR},
+            ValueType::ADDRESS => {ValueType::ADDRESS},
+            ValueType::GOTO => {ValueType::GOTO},
+            ValueType::CONDITION => {ValueType::CONDITION},
+            ValueType::VARIABLE => {ValueType::VARIABLE},
+            ValueType::ASSIGNMENT => {ValueType::ASSIGNMENT},
+            ValueType::ARGUMENT => {ValueType::ARGUMENT},
+            ValueType::FUNCTION => {ValueType::FUNCTION},
+            ValueType::VALUE => {ValueType::VALUE},
+            ValueType::RETURN => {ValueType::RETURN},
+            ValueType::PARAMETER => {ValueType::PARAMETER},
+            ValueType::DECLARATION => {ValueType::DECLARATION},
+        }
+    }
+}
+
 pub struct Value {
     v_type : ValueType,
     name : Option<String>,
@@ -39,6 +80,21 @@ impl Value {
             v_type : ValueType::FUNCTION,
             name : None,
             children : Vec::new()
+        }
+    }
+
+    pub fn get_left(&self) -> Value {
+        (*self.children.get(0).expect("Error: No left node")).clone()
+    }
+}
+
+impl Clone for Value {
+    fn clone(&self) -> Value {
+
+        Value {
+            name : self.name.clone(),
+            v_type : self.v_type.clone(),
+            children : self.children.clone()
         }
     }
 }
@@ -86,22 +142,45 @@ impl AST {
                     };
 
                     match advance(&tokens, &mut index).t_type {
-                        Token::TokenType::ASSIGN => {},
+                        Token::TokenType::ASSIGN => {
+                            let expr = match_expr(&tokens, index);
+
+                        },
                         Token::TokenType::SEMICOLON => {},
                         _ => {panic!("Error: Invalid token")}
                     }
 
                 },
-                Token::TokenType::STR => {},
+                Token::TokenType::STR => {
+                    let declaration = Value {
+                        v_type : ValueType::NUM,
+                        name : advance(&tokens, &mut index).name,
+                        children : Vec::new()
+                    };
+
+                    match advance(&tokens, &mut index).t_type {
+                        Token::TokenType::ASSIGN => {
+                            let expr = match_expr(&tokens, index);
+
+                        },
+                        Token::TokenType::SEMICOLON => {},
+                        _ => {panic!("Error: Invalid token")}
+                    }
+                },
                 Token::TokenType::LIST => {},
-                Token::TokenType::WHILE => {},
-                Token::TokenType::IF => {},
+                Token::TokenType::WHILE => {
+
+                    conditional_num+=1;
+                },
+                Token::TokenType::IF => {
+
+                    conditional_num+=1;
+                },
                 Token::TokenType::IDENTIFIER => {},
                 Token::TokenType::GOTO => {},
                 Token::TokenType::ADDR => {},
                 Token::TokenType::CLOSEBLOCK => {}
                 _ => {panic!("Error: Invalid token")}
-
             }
         }
     }
