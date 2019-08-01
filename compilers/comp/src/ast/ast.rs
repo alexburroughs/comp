@@ -19,6 +19,46 @@ fn match_expr(tokens : &Vec<Token::Token>, index : usize) -> Vec<Token::Token> {
     new_vec
 }
 
+enum ParseState {
+    Start,
+    Open,
+    Close,
+    Operand,
+    Operator
+}
+
+fn parse_expr(tokens : Vec<Token::Token>) -> Value {
+
+    let base = Value {
+        v_type : ValueType::EXPRESSION,
+        name : None,
+        children : Vec::new()
+    };
+
+    let mut state = ParseState::Start;
+
+    let mut x = 0;
+
+    while x < tokens.len() {
+        
+        match state {
+            ParseState::Start => {
+                match tokens[x].t_type {
+                    Token::TokenType::OPENBRACKET => {state = ParseState::Open},
+                    Token::TokenType::IDENTIFIER => {state = ParseState::Operand},
+                    _ => {panic!("Error: Invalid expression")}
+                }
+            },
+            ParseState::Open => {},
+            ParseState::Close => {},
+            ParseState::Operand => {},
+            ParseState::Operator => {}
+        }
+    }
+
+    base
+}
+
 pub enum ValueType {
     STATEMENT,
     EXPRESSION,
