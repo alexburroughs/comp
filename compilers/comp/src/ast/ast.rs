@@ -1,8 +1,19 @@
 use super::super::tokenizer::tokenizer as Token;
 
-fn advance(tokens : &Vec<Token::Token>, index : &mut usize) -> Token::Token {
+fn advance(tokens : &Vec<Token::Token>, index : &mut usize) -> Option<Token::Token> {
     *index+=1;
-    tokens[*index].clone()
+    match tokens.get(*index) {
+        Some(v) => {Some(v.clone())},
+        None => {None}
+    }
+}
+
+fn peek (tokens : &Vec<Token::Token>, index : usize) -> Option<Token::Token> {
+    let index = index+1;
+    match tokens.get(index) {
+        Some(v) => {Some(v.clone())},
+        None => {None}
+    }
 }
 
 fn match_expr(tokens : &Vec<Token::Token>, index : usize) -> Vec<Token::Token> {
@@ -38,14 +49,113 @@ fn parse_expr(tokens : Vec<Token::Token>) -> Value {
     let mut state = ParseState::Start;
 
     let mut x = 0;
+    let mut expr : Vec<Value> = Vec::new();
+    let mut op_stack : Vec<Value> = Vec::new();
 
     while x < tokens.len() {
         
         match state {
             ParseState::Start => {
                 match tokens[x].t_type {
-                    Token::TokenType::OPENBRACKET => {state = ParseState::Open},
-                    Token::TokenType::IDENTIFIER => {state = ParseState::Operand},
+                    Token::TokenType::OPENBRACKET => {
+                        state = ParseState::Open;
+                        op_stack.push(Value {
+                            v_type : ValueType::OPEN,
+                            name : None,
+                            children : Vec::new()
+                        })
+                    },
+                    Token::TokenType::CLOSEBRACKET => {
+                        state = ParseState::Close;
+                        let mut curr = op_stack.pop().expect("Error: Mismatched brackets in expression");
+
+                        while match curr.v_type {
+                            ValueType::OPEN => {
+                                false
+                            },
+                            _ => {
+                                expr.push(curr);
+                                curr = op_stack.pop().expect("Error: Mismatched brackets in expression");
+                                true
+                            }
+                        } {}
+                    },
+                    Token::TokenType::ADD | Token::TokenType::SUB => {},
+                    Token::TokenType::MUL | Token::TokenType::DIV => {},
+                    Token::TokenType::NOT => {},
+                    Token::TokenType::AND => {},
+                    Token::TokenType::OR  | Token::TokenType::XOR => {},
+                    Token::TokenType::IDENTIFIER => {
+                        state = ParseState::Operand;
+                        match peek(&tokens, x){
+                            Some(v) => {
+                                match v.t_type {
+                                    Token::TokenType::OPENBRACKET => {
+                                        let f_name = tokens[x].name.clone().expect("Error: Function call doesn't have a name");
+                                        let mut f_value = Value {
+                                            v_type : ValueType::CALL,
+                                            name : Some(f_name),
+                                            children : Vec::new()
+                                        };
+
+                                        x+=1;
+                                        enum FunctionState {
+                                            IDEN,
+                                            COMMA,
+                                            OPEN
+                                        }
+
+                                        let mut f_state = FunctionState::OPEN;
+
+                                        while match advance(&tokens, &mut x) {
+                                            Some(v) => {
+                                                match v.t_type {
+                                                Token::TokenType::IDENTIFIER => {
+                                                    f_value.children.push(Value {
+                                                        v_type : ValueType::VARIABLE,
+                                                        name : v.clone().name,
+                                                        children : Vec::new()
+                                                    });
+                                                    match f_state {
+                                                        FunctionState::IDEN => {panic!("Error: Unexpected token in function call")},
+                                                        _ => {
+                                                            f_state = FunctionState::IDEN;
+                                                            true
+                                                        }
+                                                    }
+                                                },
+                                                Token::TokenType::COMMA => {
+                                                    match f_state {
+                                                        FunctionState::OPEN | FunctionState::COMMA => {panic!("Error: Unexpected token in function call")},
+                                                        _ => {
+                                                            f_state = FunctionState::COMMA;
+                                                            true
+                                                        }
+                                                    }
+                                                },
+                                                Token::TokenType::CLOSEBRACKET => {
+                                                    match f_state {
+                                                        FunctionState::COMMA => {panic!("Error: Unexpected token in function call")},
+                                                        _ => {false}
+                                                    }
+                                                },
+                                                _ => {panic!("Error: Unexpected token in function call")}
+                                            }},
+                                            None => {false}
+                                        } {}
+
+                                        expr.push(f_value);
+                                    },
+                                    _ => {expr.push(Value {
+                                        v_type : ValueType::VARIABLE,
+                                        name : tokens[x].name.clone(),
+                                        children : Vec::new()
+                                    })}
+                                }
+                            },
+                            None => {}
+                        }
+                    },
                     _ => {panic!("Error: Invalid expression")}
                 }
             },
@@ -79,6 +189,18 @@ pub enum ValueType {
     GOTO,
     NUM,
     STR,
+    CALL,
+    ADD,
+    SUB,
+    MUL,
+    MOD,
+    DIV,
+    NOT,
+    AND,
+    OR,
+    XOR,
+    OPEN,
+    CLOSE
 }
 
 impl Clone for ValueType {
@@ -104,6 +226,18 @@ impl Clone for ValueType {
             ValueType::RETURN => {ValueType::RETURN},
             ValueType::PARAMETER => {ValueType::PARAMETER},
             ValueType::DECLARATION => {ValueType::DECLARATION},
+            ValueType::ADD => {ValueType::ADD},
+            ValueType::SUB => {ValueType::SUB},
+            ValueType::MUL => {ValueType::MUL},
+            ValueType::MOD => {ValueType::MOD},
+            ValueType::DIV => {ValueType::DIV},
+            ValueType::NOT => {ValueType::NOT},
+            ValueType::AND => {ValueType::AND},
+            ValueType::OR => {ValueType::OR},
+            ValueType::XOR => {ValueType::XOR},
+            ValueType::CALL => {ValueType::CALL},
+            ValueType::OPEN => {ValueType::OPEN},
+            ValueType::CLOSE => {ValueType::CLOSE},
         }
     }
 }
@@ -168,20 +302,20 @@ impl AST {
             match tokens[index].t_type {
                 Token::TokenType::FUNCTION => {
                     curr_func = Value::new_function();
-                    let next = advance(&tokens, &mut index);
+                    let next = advance(&tokens, &mut index).expect("Error: Invalid token");
                     match next.t_type {Token::TokenType::IDENTIFIER => {}, _ => {panic!("Error: Invalid token")}}
                     curr_func.name = next.name;
-                    if !advance(&tokens, &mut index).t_type.is_openblock() {panic!("Error: Invalid token")} 
+                    if !advance(&tokens, &mut index).expect("Error: Invalid token").t_type.is_openblock() {panic!("Error: Invalid token")} 
                     block_stack.push(Statement::FUNCTION(curr_func.name.expect("Error: Can't parse function name")));
                 },
                 Token::TokenType::NUM => {
                     let declaration = Value {
                         v_type : ValueType::NUM,
-                        name : advance(&tokens, &mut index).name,
+                        name : advance(&tokens, &mut index).expect("Error: Invalid token").name,
                         children : Vec::new()
                     };
 
-                    match advance(&tokens, &mut index).t_type {
+                    match advance(&tokens, &mut index).expect("Error: Invalid token").t_type {
                         Token::TokenType::ASSIGN => {
                             let expr = match_expr(&tokens, index);
 
@@ -194,11 +328,11 @@ impl AST {
                 Token::TokenType::STR => {
                     let declaration = Value {
                         v_type : ValueType::NUM,
-                        name : advance(&tokens, &mut index).name,
+                        name : advance(&tokens, &mut index).expect("Error: Invalid token").name,
                         children : Vec::new()
                     };
 
-                    match advance(&tokens, &mut index).t_type {
+                    match advance(&tokens, &mut index).expect("Error: Invalid token").t_type {
                         Token::TokenType::ASSIGN => {
                             let expr = match_expr(&tokens, index);
 
