@@ -30,142 +30,131 @@ fn match_expr(tokens : &Vec<Token::Token>, index : usize) -> Vec<Token::Token> {
     new_vec
 }
 
-enum ParseState {
-    Start,
-    Open,
-    Close,
-    Operand,
-    Operator
-}
-
 fn parse_expr(tokens : Vec<Token::Token>) -> Value {
 
-    let base = Value {
+    let mut base = Value {
         v_type : ValueType::EXPRESSION,
         name : None,
         children : Vec::new()
     };
-
-    let mut state = ParseState::Start;
 
     let mut x = 0;
     let mut expr : Vec<Value> = Vec::new();
     let mut op_stack : Vec<Value> = Vec::new();
 
     while x < tokens.len() {
-        
-        match state {
-            ParseState::Start => {
-                match tokens[x].t_type {
-                    Token::TokenType::OPENBRACKET => {
-                        state = ParseState::Open;
-                        op_stack.push(Value {
-                            v_type : ValueType::OPEN,
-                            name : None,
-                            children : Vec::new()
-                        })
+
+        match tokens[x].t_type {
+            Token::TokenType::OPENBRACKET => {
+                op_stack.push(Value {
+                    v_type : ValueType::OPEN,
+                    name : None,
+                    children : Vec::new()
+                })
+            },
+            Token::TokenType::CLOSEBRACKET => {
+                let mut curr = op_stack.pop().expect("Error: Mismatched brackets in expression");
+                while match curr.v_type {
+                    ValueType::OPEN => {
+                        false
                     },
-                    Token::TokenType::CLOSEBRACKET => {
-                        state = ParseState::Close;
-                        let mut curr = op_stack.pop().expect("Error: Mismatched brackets in expression");
-
-                        while match curr.v_type {
-                            ValueType::OPEN => {
-                                false
-                            },
-                            _ => {
-                                expr.push(curr);
-                                curr = op_stack.pop().expect("Error: Mismatched brackets in expression");
-                                true
-                            }
-                        } {}
-                    },
-                    Token::TokenType::ADD | Token::TokenType::SUB => {},
-                    Token::TokenType::MUL | Token::TokenType::DIV => {},
-                    Token::TokenType::NOT => {},
-                    Token::TokenType::AND => {},
-                    Token::TokenType::OR  | Token::TokenType::XOR => {},
-                    Token::TokenType::IDENTIFIER => {
-                        state = ParseState::Operand;
-                        match peek(&tokens, x){
-                            Some(v) => {
-                                match v.t_type {
-                                    Token::TokenType::OPENBRACKET => {
-                                        let f_name = tokens[x].name.clone().expect("Error: Function call doesn't have a name");
-                                        let mut f_value = Value {
-                                            v_type : ValueType::CALL,
-                                            name : Some(f_name),
-                                            children : Vec::new()
-                                        };
-
-                                        x+=1;
-                                        enum FunctionState {
-                                            IDEN,
-                                            COMMA,
-                                            OPEN
-                                        }
-
-                                        let mut f_state = FunctionState::OPEN;
-
-                                        while match advance(&tokens, &mut x) {
-                                            Some(v) => {
-                                                match v.t_type {
-                                                Token::TokenType::IDENTIFIER => {
-                                                    f_value.children.push(Value {
-                                                        v_type : ValueType::VARIABLE,
-                                                        name : v.clone().name,
-                                                        children : Vec::new()
-                                                    });
-                                                    match f_state {
-                                                        FunctionState::IDEN => {panic!("Error: Unexpected token in function call")},
-                                                        _ => {
-                                                            f_state = FunctionState::IDEN;
-                                                            true
-                                                        }
-                                                    }
-                                                },
-                                                Token::TokenType::COMMA => {
-                                                    match f_state {
-                                                        FunctionState::OPEN | FunctionState::COMMA => {panic!("Error: Unexpected token in function call")},
-                                                        _ => {
-                                                            f_state = FunctionState::COMMA;
-                                                            true
-                                                        }
-                                                    }
-                                                },
-                                                Token::TokenType::CLOSEBRACKET => {
-                                                    match f_state {
-                                                        FunctionState::COMMA => {panic!("Error: Unexpected token in function call")},
-                                                        _ => {false}
-                                                    }
-                                                },
-                                                _ => {panic!("Error: Unexpected token in function call")}
-                                            }},
-                                            None => {false}
-                                        } {}
-
-                                        expr.push(f_value);
-                                    },
-                                    _ => {expr.push(Value {
-                                        v_type : ValueType::VARIABLE,
-                                        name : tokens[x].name.clone(),
-                                        children : Vec::new()
-                                    })}
+                    _ => {
+                        expr.push(curr);
+                        curr = op_stack.pop().expect("Error: Mismatched brackets in expression");
+                        true
+                    }
+                } {}
+            },
+            Token::TokenType::ADD | Token::TokenType::SUB | 
+            Token::TokenType::NOT | Token::TokenType::MUL | 
+            Token::TokenType::DIV | Token::TokenType::AND | 
+            Token::TokenType::OR  | Token::TokenType::XOR => {
+                while tokens[x].t_type.get_precendence() < op_stack.last()
+                    .unwrap_or(&Value {v_type:ValueType::OPEN, name : None, children : Vec::new()})
+                    .get_precendence() {
+                    
+                    expr.push(op_stack.pop().expect("Error: lmao idk"));
+                }
+                op_stack.push(Value {v_type : ValueType::from_token(tokens[x].clone().t_type), name : None, children : Vec::new()});
+            },
+            Token::TokenType::IDENTIFIER => {
+                match peek(&tokens, x){
+                    Some(v) => {
+                        match v.t_type {
+                            Token::TokenType::OPENBRACKET => {
+                                let f_name = tokens[x].name.clone().expect("Error: Function call doesn't have a name");
+                                let mut f_value = Value {
+                                    v_type : ValueType::CALL,
+                                    name : Some(f_name),
+                                    children : Vec::new()
+                                };
+                                x+=1;
+                                enum FunctionState {
+                                    IDEN,
+                                    COMMA,
+                                    OPEN
                                 }
+                                let mut f_state = FunctionState::OPEN;
+                                while match advance(&tokens, &mut x) {
+                                    Some(v) => {
+                                        match v.t_type {
+                                        Token::TokenType::IDENTIFIER => {
+                                            f_value.children.push(Value {
+                                                v_type : ValueType::VARIABLE,
+                                                name : v.clone().name,
+                                                children : Vec::new()
+                                            });
+                                            match f_state {
+                                                FunctionState::IDEN => {panic!("Error: Unexpected token in function call")},
+                                                _ => {
+                                                    f_state = FunctionState::IDEN;
+                                                    true
+                                                }
+                                            }
+                                        },
+                                        Token::TokenType::COMMA => {
+                                            match f_state {
+                                                FunctionState::OPEN | FunctionState::COMMA => {panic!("Error: Unexpected token in function call")},
+                                                _ => {
+                                                    f_state = FunctionState::COMMA;
+                                                    true
+                                                }
+                                            }
+                                        },
+                                        Token::TokenType::CLOSEBRACKET => {
+                                            match f_state {
+                                                FunctionState::COMMA => {panic!("Error: Unexpected token in function call")},
+                                                _ => {false}
+                                            }
+                                        },
+                                        _ => {panic!("Error: Unexpected token in function call")}
+                                    }},
+                                    None => {false}
+                                } {}
+
+                                expr.push(f_value);
                             },
-                            None => {}
+                        _ => {expr.push(Value {
+                                v_type : ValueType::VARIABLE,
+                                name : tokens[x].name.clone(),
+                                children : Vec::new()
+                            })}
                         }
                     },
-                    _ => {panic!("Error: Invalid expression")}
+                    None => {}
                 }
             },
-            ParseState::Open => {},
-            ParseState::Close => {},
-            ParseState::Operand => {},
-            ParseState::Operator => {}
+            _ => {panic!("Error: Invalid expression")}
         }
     }
 
+    for x in op_stack {
+        if x.get_precendence() != -1 {
+            expr.push(x);
+        }
+    }
+
+    base.children = expr;
     base
 }
 
@@ -201,6 +190,34 @@ pub enum ValueType {
     XOR,
     OPEN,
     CLOSE
+}
+
+impl ValueType {
+    pub fn get_precendence(&self) -> i32{
+        match self {
+            ValueType::OR | ValueType::XOR => {1},
+            ValueType::AND => {2},
+            ValueType::ADD | ValueType::SUB => {3},
+            ValueType::MUL | ValueType::DIV | ValueType::MOD => {4},
+            ValueType::NOT => {5},
+            _ => {-1}
+        }
+    }
+
+    pub fn from_token(token : Token::TokenType) -> ValueType {
+        match token {
+            Token::TokenType::ADD => {ValueType::ADD},
+            Token::TokenType::SUB => {ValueType::SUB},
+            Token::TokenType::MUL => {ValueType::MUL},
+            Token::TokenType::DIV => {ValueType::DIV},
+            Token::TokenType::MOD => {ValueType::MOD},
+            Token::TokenType::NOT => {ValueType::NOT},
+            Token::TokenType::AND => {ValueType::AND},
+            Token::TokenType::OR => {ValueType::OR},
+            Token::TokenType::XOR => {ValueType::XOR},
+            _ => {panic!("Error: Conversion not implemented")}
+        }
+    }
 }
 
 impl Clone for ValueType {
@@ -259,6 +276,10 @@ impl Value {
 
     pub fn get_left(&self) -> Value {
         (*self.children.get(0).expect("Error: No left node")).clone()
+    }
+
+    pub fn get_precendence(&self) -> i32 {
+        self.v_type.get_precendence()
     }
 }
 

@@ -48,6 +48,19 @@ impl Clone for Token {
     }
 }
 
+impl TokenType {
+    pub fn get_precendence(&self) -> i32{
+        match self {
+            TokenType::OR | TokenType::XOR => {1},
+            TokenType::AND => {2},
+            TokenType::ADD | TokenType::SUB => {3},
+            TokenType::MUL | TokenType::DIV | TokenType::MOD => {4},
+            TokenType::NOT => {5},
+            _ => {-1}
+        }
+    }
+}
+
 pub enum TokenType {
     IF,
     ELSE,
