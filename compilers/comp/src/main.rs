@@ -9,7 +9,12 @@ pub mod ast {
     pub mod ast;
 }
 
+pub mod generator {
+    pub mod generator;
+}
+
 use ast::ast as SyntaxTree;
+use generator::generator as Generator;
 
 use tokenizer::tokenizer as Token;
 

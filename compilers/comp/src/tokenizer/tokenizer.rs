@@ -131,6 +131,10 @@ pub fn tokenize(inp : String) -> Vec<Token> {
 
         let curr = inp_list[index];
 
+        if curr.is_whitespace() {
+            index += 1;
+            continue;
+        }
         if curr.is_alphabetic() {
             if match_next(&inp_list, index, "if") {
                 tok_list.push(Token {
