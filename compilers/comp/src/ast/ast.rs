@@ -457,7 +457,16 @@ impl AST {
                     curr_block.push(address);
                 },
                 Token::TokenType::CLOSEBLOCK => {
-                    
+                    match block_stack.pop().expect("Error: Invalid }") {
+                        Statement::FUNCTION(val) => {
+                            let tmp = val.clone();
+                            ast.functions.push((*blocks.get(tmp.as_str()).expect("Error: function not defined")).clone());
+                        },
+                        Statement::WHILE(val) => {
+                            
+                        },
+                        Statement::IF(val) => {}
+                    }
                 }
                 _ => {panic!("Error: Invalid token")}
             }
