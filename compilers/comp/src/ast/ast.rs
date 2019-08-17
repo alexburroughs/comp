@@ -1,4 +1,5 @@
 use super::super::tokenizer::tokenizer as Token;
+use std::collections::HashMap;
 
 fn advance(tokens : &Vec<Token::Token>, index : &mut usize) -> Option<Token::Token> {
     *index+=1;
@@ -25,6 +26,20 @@ fn match_expr(tokens : &Vec<Token::Token>, index : usize) -> Vec<Token::Token> {
         i+=1;
         
         match tokens[i].t_type { Token::TokenType::SEMICOLON => {break}, _ => {}}
+    }
+
+    new_vec
+}
+
+fn match_expr_open(tokens : &Vec<Token::Token>, index : usize) -> Vec<Token::Token> {
+
+    let mut i = index;
+    let mut new_vec : Vec<Token::Token> = Vec::new();
+    loop {
+        new_vec.push(tokens[i].clone());
+        i+=1;
+        
+        match tokens[i].t_type { Token::TokenType::OPENBLOCK => {break}, _ => {}}
     }
 
     new_vec
@@ -303,12 +318,6 @@ pub struct AST {
     functions : Vec<Value>
 }
 
-impl Copy for Option<T> {
-    pub fn Copy (&self) -> Option<T> {
-        
-    }
-}
-
 impl AST {
     pub fn new() -> AST {
         AST {
@@ -322,28 +331,28 @@ impl AST {
         let mut ast = AST::new();
         let mut curr_func = Value::new_function();
         let mut curr_block : Vec<Value> = Vec::new();
+        let mut curr_name = String::from("");
+        let mut blocks : HashMap<String, Value> = HashMap::new();
         let mut block_stack : Vec<Statement> = Vec::new();
         let mut conditional_num : u64 = 0;
-        let mut tmp = curr_func.clone();
 
         while index < tokens.len() {
             match tokens[index].t_type {
                 Token::TokenType::FUNCTION => {
 
-                    let name = curr_func.name;
-
-                    let tmp = Value {
-                        v_type : ValueType::FUNCTION,
-                        name : name,
-                        children : curr_func.children.clone()
-                    };
                     curr_func = Value::new_function();
                     let next = advance(&tokens, &mut index).expect("Error: Invalid token");
                     match next.t_type {Token::TokenType::IDENTIFIER => {}, _ => {panic!("Error: Invalid token")}}
                     curr_func.name = next.name;
                     if !advance(&tokens, &mut index).expect("Error: Invalid token").t_type.is_openblock() {panic!("Error: Invalid token")} 
                     block_stack.push(Statement::FUNCTION(curr_func.name.expect("Error: Can't parse function name")));
-                    curr_block = Vec::new();
+                    let name = tokens[index].clone().name.expect("Error: Can't parse function name");
+                    blocks.insert(name.clone(), Value {
+                        v_type : ValueType::FUNCTION,
+                        name : Some(name.clone()),
+                        children : Vec::new()
+                    });
+                    curr_name = name.clone();
                 },
                 Token::TokenType::NUM => {
 
@@ -393,15 +402,28 @@ impl AST {
                 Token::TokenType::LIST => {},
                 Token::TokenType::WHILE => {
 
+                    let mut while_loop = Value {v_type : ValueType::WHILE, name : None, children : Vec::new()};
+                    let expr = match_expr_open(&tokens, index);
+                    let conditional = Value{v_type : ValueType::CONDITION, name : Some(String::from("condition")), children : vec!{parse_expr(expr)}};
+                    while_loop.children.push(conditional);
+                    
+                    block_stack.push(Statement::WHILE(conditional_num));
+                    let name = format!("while{}", conditional_num);
+                    blocks.insert(name.clone(), while_loop);
+                    curr_name = name.clone();
                     conditional_num+=1;
                 },
                 Token::TokenType::IF => {
-                    let statement = Value {
-                        v_type : ValueType::IF,
-                        name : Some(format!("if{}", conditional_num)),
-                        children : Vec::new()
-                    };
                     
+                    let mut while_loop = Value {v_type : ValueType::IF, name : None, children : Vec::new()};
+                    let expr = match_expr_open(&tokens, index);
+                    let conditional = Value{v_type : ValueType::CONDITION, name : Some(String::from("condition")), children : vec!{parse_expr(expr)}};
+                    while_loop.children.push(conditional);
+                    
+                    block_stack.push(Statement::IF(conditional_num));
+                    let name = format!("if{}", conditional_num);
+                    blocks.insert(name.clone(), while_loop);
+                    curr_name = name.clone();
                     conditional_num+=1;
                 },
                 Token::TokenType::IDENTIFIER => {
@@ -434,7 +456,9 @@ impl AST {
                     let address = Value{v_type : ValueType::ADDRESS, name : name, children : Vec::new()};
                     curr_block.push(address);
                 },
-                Token::TokenType::CLOSEBLOCK => {}
+                Token::TokenType::CLOSEBLOCK => {
+                    
+                }
                 _ => {panic!("Error: Invalid token")}
             }
         }
