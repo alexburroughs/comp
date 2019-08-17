@@ -1,5 +1,6 @@
 use super::super::tokenizer::tokenizer as Token;
 use std::collections::HashMap;
+use std::cell::RefCell;
 
 fn advance(tokens : &Vec<Token::Token>, index : &mut usize) -> Option<Token::Token> {
     *index+=1;
@@ -330,9 +331,8 @@ impl AST {
         let mut index = 0;
         let mut ast = AST::new();
         let mut curr_func = Value::new_function();
-        let mut curr_block : Vec<Value> = Vec::new();
         let mut curr_name = String::from("");
-        let mut blocks : HashMap<String, Value> = HashMap::new();
+        let mut blocks : HashMap<String, RefCell<Value>> = HashMap::new();
         let mut block_stack : Vec<Statement> = Vec::new();
         let mut conditional_num : u64 = 0;
 
@@ -347,11 +347,11 @@ impl AST {
                     if !advance(&tokens, &mut index).expect("Error: Invalid token").t_type.is_openblock() {panic!("Error: Invalid token")} 
                     block_stack.push(Statement::FUNCTION(curr_func.name.expect("Error: Can't parse function name")));
                     let name = tokens[index].clone().name.expect("Error: Can't parse function name");
-                    blocks.insert(name.clone(), Value {
+                    blocks.insert(name.clone(), RefCell::from(Value {
                         v_type : ValueType::FUNCTION,
                         name : Some(name.clone()),
                         children : Vec::new()
-                    });
+                    }));
                     curr_name = name.clone();
                 },
                 Token::TokenType::NUM => {
@@ -364,13 +364,13 @@ impl AST {
                         children : Vec::new()
                     };
 
-                    curr_block.push(declaration);
+                    blocks.get(curr_name.as_str()).expect("Error: Declaration out of block").borrow_mut().children.push(declaration);
 
                     match advance(&tokens, &mut index).expect("Error: Invalid token").t_type {
                         Token::TokenType::ASSIGN => {
                             let expr = match_expr(&tokens, index);
                             let assignment = Value{v_type : ValueType::ASSIGNMENT, name : name.clone(), children : vec!{parse_expr(expr)}};
-                            curr_block.push(assignment);
+                            blocks.get(curr_name.as_str()).expect("Error: Assignment out of block").borrow_mut().children.push(assignment);
                         },
                         Token::TokenType::SEMICOLON => {},
                         _ => {panic!("Error: Invalid token")}
@@ -387,13 +387,13 @@ impl AST {
                         children : Vec::new()
                     };
 
-                    curr_block.push(declaration);
+                    blocks.get(curr_name.as_str()).expect("Error: Declaration out of block").borrow_mut().children.push(declaration);
 
                     match advance(&tokens, &mut index).expect("Error: Invalid token").t_type {
                         Token::TokenType::ASSIGN => {
                             let expr = match_expr(&tokens, index);
                             let assignment = Value{v_type : ValueType::ASSIGNMENT, name : name.clone(), children : vec!{parse_expr(expr)}};
-                            curr_block.push(assignment);
+                            blocks.get(curr_name.as_str()).expect("Error: Assignment out of block").borrow_mut().children.push(assignment);
                         },
                         Token::TokenType::SEMICOLON => {},
                         _ => {panic!("Error: Invalid token")}
@@ -409,7 +409,7 @@ impl AST {
                     
                     block_stack.push(Statement::WHILE(conditional_num));
                     let name = format!("while{}", conditional_num);
-                    blocks.insert(name.clone(), while_loop);
+                    blocks.insert(name.clone(), RefCell::from(while_loop));
                     curr_name = name.clone();
                     conditional_num+=1;
                 },
@@ -422,7 +422,7 @@ impl AST {
                     
                     block_stack.push(Statement::IF(conditional_num));
                     let name = format!("if{}", conditional_num);
-                    blocks.insert(name.clone(), while_loop);
+                    blocks.insert(name.clone(), RefCell::from(while_loop));
                     curr_name = name.clone();
                     conditional_num+=1;
                 },
@@ -434,7 +434,7 @@ impl AST {
                         Token::TokenType::ASSIGN => {
                             let expr = match_expr(&tokens, index);
                             let assignment = Value{v_type : ValueType::ASSIGNMENT, name : name.clone(), children : vec!{parse_expr(expr)}};
-                            curr_block.push(assignment);
+                            blocks.get(curr_name.as_str()).expect("Error: Assignment out of block").borrow_mut().children.push(assignment);
                         },
                         _ => {panic!("Error: Invalid token")}
                     }
@@ -445,7 +445,7 @@ impl AST {
                     match addr.t_type{
                         Token::TokenType::ADDR => {
                             let goto = Value{v_type : ValueType::GOTO, name : addr.name, children : Vec::new()};
-                            curr_block.push(goto);
+                            blocks.get(curr_name.as_str()).expect("Error: Goto out of block").borrow_mut().children.push(goto);
                         },
                         _ => {panic!("Error: Invalid token")}
                     }
@@ -454,13 +454,13 @@ impl AST {
                     let name = tokens[index].clone().name;
 
                     let address = Value{v_type : ValueType::ADDRESS, name : name, children : Vec::new()};
-                    curr_block.push(address);
+                    blocks.get(curr_name.as_str()).expect("Error: Address out of block").borrow_mut().children.push(address);
                 },
                 Token::TokenType::CLOSEBLOCK => {
                     match block_stack.pop().expect("Error: Invalid }") {
                         Statement::FUNCTION(val) => {
                             let tmp = val.clone();
-                            ast.functions.push((*blocks.get(tmp.as_str()).expect("Error: function not defined")).clone());
+                            ast.functions.push((*blocks.get(tmp.as_str()).expect("Error: function not defined")).borrow().clone());
                         },
                         Statement::WHILE(val) => {
                             
