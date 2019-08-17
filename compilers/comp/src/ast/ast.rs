@@ -193,6 +193,7 @@ pub enum ValueType {
     GOTO,
     NUM,
     STR,
+    LIST,
     CALL,
     ADD,
     SUB,
@@ -270,6 +271,7 @@ impl Clone for ValueType {
             ValueType::CALL => {ValueType::CALL},
             ValueType::OPEN => {ValueType::OPEN},
             ValueType::CLOSE => {ValueType::CLOSE},
+            ValueType::LIST => {ValueType::LIST}
         }
     }
 }
@@ -311,8 +313,8 @@ impl Value {
 
 enum Statement {
     FUNCTION(String),
-    IF(u64),
-    WHILE(u64)
+    IF(String),
+    WHILE(String)
 }
 
 pub struct AST {
@@ -382,7 +384,7 @@ impl AST {
                     let name = advance(&tokens, &mut index).expect("Error: Invalid token").name;
 
                     let declaration = Value {
-                        v_type : ValueType::NUM,
+                        v_type : ValueType::STR,
                         name : name.clone(),
                         children : Vec::new()
                     };
@@ -399,7 +401,22 @@ impl AST {
                         _ => {panic!("Error: Invalid token")}
                     }
                 },
-                Token::TokenType::LIST => {},
+                Token::TokenType::LIST => {
+                    let name = advance(&tokens, &mut index).expect("Error: Invalid token").name;
+
+                    let declaration = Value {
+                        v_type : ValueType::LIST,
+                        name : name.clone(),
+                        children : Vec::new()
+                    };
+
+                    blocks.get(curr_name.as_str()).expect("Error: Declaration out of block").borrow_mut().children.push(declaration);
+
+                    match advance(&tokens, &mut index).expect("Error: Invalid token").t_type {
+                        Token::TokenType::SEMICOLON => {},
+                        _ => {panic!("Error: Invalid token")}
+                    }
+                },
                 Token::TokenType::WHILE => {
 
                     let mut while_loop = Value {v_type : ValueType::WHILE, name : None, children : Vec::new()};
@@ -407,7 +424,7 @@ impl AST {
                     let conditional = Value{v_type : ValueType::CONDITION, name : Some(String::from("condition")), children : vec!{parse_expr(expr)}};
                     while_loop.children.push(conditional);
                     
-                    block_stack.push(Statement::WHILE(conditional_num));
+                    block_stack.push(Statement::WHILE(format!("while{}", conditional_num)));
                     let name = format!("while{}", conditional_num);
                     blocks.insert(name.clone(), RefCell::from(while_loop));
                     curr_name = name.clone();
@@ -420,7 +437,7 @@ impl AST {
                     let conditional = Value{v_type : ValueType::CONDITION, name : Some(String::from("condition")), children : vec!{parse_expr(expr)}};
                     while_loop.children.push(conditional);
                     
-                    block_stack.push(Statement::IF(conditional_num));
+                    block_stack.push(Statement::IF(format!("if{}", conditional_num)));
                     let name = format!("if{}", conditional_num);
                     blocks.insert(name.clone(), RefCell::from(while_loop));
                     curr_name = name.clone();
@@ -463,9 +480,35 @@ impl AST {
                             ast.functions.push((*blocks.get(tmp.as_str()).expect("Error: function not defined")).borrow().clone());
                         },
                         Statement::WHILE(val) => {
-                            
+                            let tmp = val.clone();
+                            match block_stack.last().expect("Error: While loop not in function") {
+                                Statement::FUNCTION(var) | Statement::IF(var) | Statement::WHILE(var) => {
+                                    blocks.get(var.as_str())
+                                    .expect("Error: Funtion is not defined")
+                                    .borrow_mut()
+                                    .children.push(
+                                        (blocks.get(tmp.as_str())
+                                        .expect("Error: function not defined"))
+                                        .borrow()
+                                        .clone());
+                                    } 
+                            }
                         },
-                        Statement::IF(val) => {}
+                        Statement::IF(val) => {
+                            let tmp = val.clone();
+                            match block_stack.last().expect("Error: While loop not in function") {
+                                Statement::FUNCTION(var) | Statement::IF(var) | Statement::WHILE(var) => {
+                                    blocks.get(var.as_str())
+                                    .expect("Error: Funtion is not defined")
+                                    .borrow_mut()
+                                    .children.push(
+                                        (blocks.get(tmp.as_str())
+                                        .expect("Error: function not defined"))
+                                        .borrow()
+                                        .clone());
+                                    } 
+                            }
+                        }
                     }
                 }
                 _ => {panic!("Error: Invalid token")}
