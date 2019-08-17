@@ -264,6 +264,17 @@ pub struct Value {
     children : Vec<Value>
 }
 
+impl Clone for Value {
+    fn clone(&self) -> Value {
+
+        Value {
+            name : self.name.clone(),
+            v_type : self.v_type.clone(),
+            children : self.children.clone()
+        }
+    }
+}
+
 impl Value {
     pub fn new_function() -> Value {
         Value {
@@ -282,17 +293,6 @@ impl Value {
     }
 }
 
-impl Clone for Value {
-    fn clone(&self) -> Value {
-
-        Value {
-            name : self.name.clone(),
-            v_type : self.v_type.clone(),
-            children : self.children.clone()
-        }
-    }
-}
-
 enum Statement {
     FUNCTION(String),
     IF(u64),
@@ -301,6 +301,12 @@ enum Statement {
 
 pub struct AST {
     functions : Vec<Value>
+}
+
+impl Copy for Option<T> {
+    pub fn Copy (&self) -> Option<T> {
+        
+    }
 }
 
 impl AST {
@@ -315,18 +321,29 @@ impl AST {
         let mut index = 0;
         let mut ast = AST::new();
         let mut curr_func = Value::new_function();
+        let mut curr_block : Vec<Value> = Vec::new();
         let mut block_stack : Vec<Statement> = Vec::new();
         let mut conditional_num : u64 = 0;
+        let mut tmp = curr_func.clone();
 
         while index < tokens.len() {
             match tokens[index].t_type {
                 Token::TokenType::FUNCTION => {
+
+                    let name = curr_func.name;
+
+                    let tmp = Value {
+                        v_type : ValueType::FUNCTION,
+                        name : name,
+                        children : curr_func.children.clone()
+                    };
                     curr_func = Value::new_function();
                     let next = advance(&tokens, &mut index).expect("Error: Invalid token");
                     match next.t_type {Token::TokenType::IDENTIFIER => {}, _ => {panic!("Error: Invalid token")}}
                     curr_func.name = next.name;
                     if !advance(&tokens, &mut index).expect("Error: Invalid token").t_type.is_openblock() {panic!("Error: Invalid token")} 
                     block_stack.push(Statement::FUNCTION(curr_func.name.expect("Error: Can't parse function name")));
+                    curr_block = Vec::new();
                 },
                 Token::TokenType::NUM => {
 
@@ -338,13 +355,13 @@ impl AST {
                         children : Vec::new()
                     };
 
-                    curr_func.children.push(declaration);
+                    curr_block.push(declaration);
 
                     match advance(&tokens, &mut index).expect("Error: Invalid token").t_type {
                         Token::TokenType::ASSIGN => {
                             let expr = match_expr(&tokens, index);
                             let assignment = Value{v_type : ValueType::ASSIGNMENT, name : name.clone(), children : vec!{parse_expr(expr)}};
-                            curr_func.children.push(assignment);
+                            curr_block.push(assignment);
                         },
                         Token::TokenType::SEMICOLON => {},
                         _ => {panic!("Error: Invalid token")}
@@ -361,13 +378,13 @@ impl AST {
                         children : Vec::new()
                     };
 
-                    curr_func.children.push(declaration);
+                    curr_block.push(declaration);
 
                     match advance(&tokens, &mut index).expect("Error: Invalid token").t_type {
                         Token::TokenType::ASSIGN => {
                             let expr = match_expr(&tokens, index);
                             let assignment = Value{v_type : ValueType::ASSIGNMENT, name : name.clone(), children : vec!{parse_expr(expr)}};
-                            curr_func.children.push(assignment);
+                            curr_block.push(assignment);
                         },
                         Token::TokenType::SEMICOLON => {},
                         _ => {panic!("Error: Invalid token")}
@@ -379,7 +396,12 @@ impl AST {
                     conditional_num+=1;
                 },
                 Token::TokenType::IF => {
-
+                    let statement = Value {
+                        v_type : ValueType::IF,
+                        name : Some(format!("if{}", conditional_num)),
+                        children : Vec::new()
+                    };
+                    
                     conditional_num+=1;
                 },
                 Token::TokenType::IDENTIFIER => {
@@ -390,7 +412,7 @@ impl AST {
                         Token::TokenType::ASSIGN => {
                             let expr = match_expr(&tokens, index);
                             let assignment = Value{v_type : ValueType::ASSIGNMENT, name : name.clone(), children : vec!{parse_expr(expr)}};
-                            curr_func.children.push(assignment);
+                            curr_block.push(assignment);
                         },
                         _ => {panic!("Error: Invalid token")}
                     }
@@ -401,7 +423,7 @@ impl AST {
                     match addr.t_type{
                         Token::TokenType::ADDR => {
                             let goto = Value{v_type : ValueType::GOTO, name : addr.name, children : Vec::new()};
-                            curr_func.children.push(goto);
+                            curr_block.push(goto);
                         },
                         _ => {panic!("Error: Invalid token")}
                     }
@@ -410,7 +432,7 @@ impl AST {
                     let name = tokens[index].clone().name;
 
                     let address = Value{v_type : ValueType::ADDRESS, name : name, children : Vec::new()};
-                    curr_func.children.push(address);
+                    curr_block.push(address);
                 },
                 Token::TokenType::CLOSEBLOCK => {}
                 _ => {panic!("Error: Invalid token")}
