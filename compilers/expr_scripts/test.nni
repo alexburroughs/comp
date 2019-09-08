@@ -1,0 +1,12 @@
+function a (iden1, iden2) {
+	num a;
+	a = 23;
+	num b = 9;
+	if (a > b) {
+		num c = 0;
+	}
+}
+
+function main () {
+	num var = 4;
+}

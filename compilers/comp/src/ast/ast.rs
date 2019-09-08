@@ -4,6 +4,7 @@ use std::cell::RefCell;
 
 fn advance(tokens : &Vec<Token::Token>, index : &mut usize) -> Option<Token::Token> {
     *index+=1;
+    println!("Advancing");
     match tokens.get(*index) {
         Some(v) => {Some(v.clone())},
         None => {None}
@@ -18,9 +19,9 @@ fn peek (tokens : &Vec<Token::Token>, index : usize) -> Option<Token::Token> {
     }
 }
 
-fn match_expr(tokens : &Vec<Token::Token>, index : usize) -> Vec<Token::Token> {
+fn match_expr(tokens : &Vec<Token::Token>, index : &mut usize) -> Vec<Token::Token> {
 
-    let mut i = index;
+    let mut i = *index;
     let mut new_vec : Vec<Token::Token> = Vec::new();
     loop {
         new_vec.push(tokens[i].clone());
@@ -29,12 +30,14 @@ fn match_expr(tokens : &Vec<Token::Token>, index : usize) -> Vec<Token::Token> {
         match tokens[i].t_type { Token::TokenType::SEMICOLON => {break}, _ => {}}
     }
 
+    *index=i;
+
     new_vec
 }
 
-fn match_expr_open(tokens : &Vec<Token::Token>, index : usize) -> Vec<Token::Token> {
+fn match_expr_open(tokens : &Vec<Token::Token>, index : &mut usize) -> Vec<Token::Token> {
 
-    let mut i = index;
+    let mut i = *index;
     let mut new_vec : Vec<Token::Token> = Vec::new();
     loop {
         new_vec.push(tokens[i].clone());
@@ -43,7 +46,86 @@ fn match_expr_open(tokens : &Vec<Token::Token>, index : usize) -> Vec<Token::Tok
         match tokens[i].t_type { Token::TokenType::OPENBLOCK => {break}, _ => {}}
     }
 
+    *index=i;
+
     new_vec
+}
+
+fn match_arg_close(tokens : &Vec<Token::Token>, index : &mut usize) -> Vec<Token::Token> {
+
+    let mut i = *index;
+    let mut new_vec : Vec<Token::Token> = Vec::new();
+    loop {
+        new_vec.push(tokens[i].clone());
+        i+=1;
+        
+        match tokens[i].t_type { Token::TokenType::CLOSEBRACKET => {break}, _ => {}}
+    }
+
+    *index=i;
+
+    println!("i: {}, index: {}", &i, &*index);
+
+    new_vec
+}
+
+enum ArgState {
+    Start,
+    Next,
+    Arg,
+    End
+}
+
+fn parse_args(tokens : Vec<Token::Token>) -> Value {
+    let mut base = Value {
+        v_type : ValueType::ARGUMENT,
+        name : None,
+        children : Vec::new()
+    };
+
+    let mut x = 0;
+    let mut state = ArgState::Start;
+
+    while x < tokens.len() {
+        match state {
+            ArgState::Start => {
+                if tokens[x].t_type.is_openbracket() {
+                    
+                    state = ArgState::Next;
+                }
+            },
+            ArgState::Next => {
+                if tokens[x].t_type.is_identifier() {
+                    state = ArgState::Arg;
+                    base.children.push(
+                        Value {
+                            v_type : ValueType::ARGUMENT,
+                            name: tokens[x].name.clone(),
+                            children : Vec::new()
+                        }
+                    );
+                }
+                else if tokens[x].t_type.is_closebracket() {
+                    state = ArgState::End;
+                }
+            },
+            ArgState::Arg => {
+                if tokens[x].t_type.is_comma() {
+                    state = ArgState::Next;
+                }
+                else if tokens[x].t_type.is_closebracket() {
+                    state = ArgState::End;
+                }
+            },
+            ArgState::End => {
+                panic!("Error: Unexpected token after function arguments")
+            }
+        }
+
+        x+=1;
+    }
+
+    base
 }
 
 fn parse_expr(tokens : Vec<Token::Token>) -> Value {
@@ -81,15 +163,18 @@ fn parse_expr(tokens : Vec<Token::Token>) -> Value {
                     }
                 } {}
             },
-            Token::TokenType::ADD | Token::TokenType::SUB | 
-            Token::TokenType::NOT | Token::TokenType::MUL | 
-            Token::TokenType::DIV | Token::TokenType::AND | 
-            Token::TokenType::OR  | Token::TokenType::XOR => {
+            Token::TokenType::ADD     | Token::TokenType::SUB       | 
+            Token::TokenType::NOT     | Token::TokenType::MUL       | 
+            Token::TokenType::DIV     | Token::TokenType::AND       | 
+            Token::TokenType::OR      | Token::TokenType::XOR       |
+            Token::TokenType::GREATER | Token::TokenType::GREATEREQ |
+            Token::TokenType::LESS    | Token::TokenType::LESSEQ    |
+            Token::TokenType::EQUAL => {
                 while tokens[x].t_type.get_precendence() < op_stack.last()
                     .unwrap_or(&Value {v_type:ValueType::OPEN, name : None, children : Vec::new()})
                     .get_precendence() {
                     
-                    expr.push(op_stack.pop().expect("Error: lmao idk"));
+                    expr.push(op_stack.pop().expect("Error: lmao idk, expression operators"));
                 }
                 op_stack.push(Value {v_type : ValueType::from_token(tokens[x].clone().t_type), name : None, children : Vec::new()});
             },
@@ -149,7 +234,8 @@ fn parse_expr(tokens : Vec<Token::Token>) -> Value {
                                 } {}
                                 expr.push(f_value);
                             },
-                        _ => {expr.push(Value {
+                        _ => {
+                            expr.push(Value {
                                 v_type : ValueType::VARIABLE,
                                 name : tokens[x].name.clone(),
                                 children : Vec::new()
@@ -159,8 +245,21 @@ fn parse_expr(tokens : Vec<Token::Token>) -> Value {
                     None => {}
                 }
             },
-            _ => {panic!("Error: Invalid expression")}
+            Token::TokenType::NUMBER => {
+                expr.push(Value {
+                    v_type : ValueType::NUM,
+                    name : tokens[x].name.clone(),
+                    children : Vec::new()
+                });
+                println!("Added number to expr");               
+            },
+            _ => {
+                println!("Error: {}", tokens[x].clone().name.expect("errors"));
+                panic!("Error: Invalid expression")
+            }
         }
+
+        x+=1;
     }
 
     for x in op_stack {
@@ -170,6 +269,9 @@ fn parse_expr(tokens : Vec<Token::Token>) -> Value {
     }
 
     base.children = expr;
+
+    println!("Done expression");
+
     base
 }
 
@@ -205,7 +307,12 @@ pub enum ValueType {
     OR,
     XOR,
     OPEN,
-    CLOSE
+    CLOSE,
+    GREATER,
+    GREATEREQ,
+    LESS,
+    LESSEQ,
+    EQ
 }
 
 impl ValueType {
@@ -231,6 +338,11 @@ impl ValueType {
             Token::TokenType::AND => {ValueType::AND},
             Token::TokenType::OR => {ValueType::OR},
             Token::TokenType::XOR => {ValueType::XOR},
+            Token::TokenType::GREATER => {ValueType::GREATER},
+            Token::TokenType::GREATEREQ => {ValueType::GREATEREQ},
+            Token::TokenType::LESS => {ValueType::LESS},
+            Token::TokenType::LESSEQ => {ValueType::LESSEQ},
+            Token::TokenType::EQUAL => {ValueType::EQ},
             _ => {panic!("Error: Conversion not implemented")}
         }
     }
@@ -271,15 +383,20 @@ impl Clone for ValueType {
             ValueType::CALL => {ValueType::CALL},
             ValueType::OPEN => {ValueType::OPEN},
             ValueType::CLOSE => {ValueType::CLOSE},
-            ValueType::LIST => {ValueType::LIST}
+            ValueType::LIST => {ValueType::LIST},
+            ValueType::GREATER => {ValueType::GREATER}
+            ValueType::GREATEREQ => {ValueType::GREATEREQ}
+            ValueType::LESS => {ValueType::LESS}
+            ValueType::LESSEQ => {ValueType::LESSEQ}
+            ValueType::EQ => {ValueType::EQ}
         }
     }
 }
 
 pub struct Value {
-    v_type : ValueType,
-    name : Option<String>,
-    children : Vec<Value>
+    pub v_type : ValueType,
+    pub name : Option<String>,
+    pub children : Vec<Value>
 }
 
 impl Clone for Value {
@@ -318,7 +435,7 @@ enum Statement {
 }
 
 pub struct AST {
-    functions : Vec<Value>
+    pub functions : Vec<Value>
 }
 
 impl AST {
@@ -331,30 +448,39 @@ impl AST {
     pub fn generate_tree(&mut self, tokens: Vec<Token::Token>) {
 
         let mut index = 0;
-        let mut ast = AST::new();
         let mut curr_func = Value::new_function();
         let mut curr_name = String::from("");
         let mut blocks : HashMap<String, RefCell<Value>> = HashMap::new();
         let mut block_stack : Vec<Statement> = Vec::new();
         let mut conditional_num : u64 = 0;
-
+        println!("current: {}", tokens.len());
         while index < tokens.len() {
             match tokens[index].t_type {
                 Token::TokenType::FUNCTION => {
-
+                    println!("Func");
                     curr_func = Value::new_function();
                     let next = advance(&tokens, &mut index).expect("Error: Invalid token");
+                    
                     match next.t_type {Token::TokenType::IDENTIFIER => {}, _ => {panic!("Error: Invalid token")}}
                     curr_func.name = next.name;
-                    if !advance(&tokens, &mut index).expect("Error: Invalid token").t_type.is_openblock() {panic!("Error: Invalid token")} 
+
+                    let name = tokens[index].clone().name.expect("Error: can't parse function name");
+                    
+                    let args = parse_args(match_arg_close(&tokens, &mut index));
+                    let val = vec![args];
+                    println!("next: {}", tokens[index].clone().name.expect("errorrss"));
+                    if !advance(&tokens, &mut index).expect("Error: Expected token {").t_type.is_openblock() {panic!("Error: Invalid token")} 
+                    
                     block_stack.push(Statement::FUNCTION(curr_func.name.expect("Error: Can't parse function name")));
-                    let name = tokens[index].clone().name.expect("Error: Can't parse function name");
+                    
                     blocks.insert(name.clone(), RefCell::from(Value {
                         v_type : ValueType::FUNCTION,
                         name : Some(name.clone()),
-                        children : Vec::new()
+                        children : val
                     }));
+
                     curr_name = name.clone();
+
                 },
                 Token::TokenType::NUM => {
 
@@ -370,7 +496,8 @@ impl AST {
 
                     match advance(&tokens, &mut index).expect("Error: Invalid token").t_type {
                         Token::TokenType::ASSIGN => {
-                            let expr = match_expr(&tokens, index);
+                            index+=1;
+                            let expr = match_expr(&tokens, &mut index);
                             let assignment = Value{v_type : ValueType::ASSIGNMENT, name : name.clone(), children : vec!{parse_expr(expr)}};
                             blocks.get(curr_name.as_str()).expect("Error: Assignment out of block").borrow_mut().children.push(assignment);
                         },
@@ -393,7 +520,7 @@ impl AST {
 
                     match advance(&tokens, &mut index).expect("Error: Invalid token").t_type {
                         Token::TokenType::ASSIGN => {
-                            let expr = match_expr(&tokens, index);
+                            let expr = match_expr(&tokens, &mut index);
                             let assignment = Value{v_type : ValueType::ASSIGNMENT, name : name.clone(), children : vec!{parse_expr(expr)}};
                             blocks.get(curr_name.as_str()).expect("Error: Assignment out of block").borrow_mut().children.push(assignment);
                         },
@@ -420,7 +547,8 @@ impl AST {
                 Token::TokenType::WHILE => {
 
                     let mut while_loop = Value {v_type : ValueType::WHILE, name : None, children : Vec::new()};
-                    let expr = match_expr_open(&tokens, index);
+                    index+=1;
+                    let expr = match_expr_open(&tokens, &mut index);
                     let conditional = Value{v_type : ValueType::CONDITION, name : Some(String::from("condition")), children : vec!{parse_expr(expr)}};
                     while_loop.children.push(conditional);
                     
@@ -433,7 +561,8 @@ impl AST {
                 Token::TokenType::IF => {
                     
                     let mut while_loop = Value {v_type : ValueType::IF, name : None, children : Vec::new()};
-                    let expr = match_expr_open(&tokens, index);
+                    index+=1;
+                    let expr = match_expr_open(&tokens, &mut index);
                     let conditional = Value{v_type : ValueType::CONDITION, name : Some(String::from("condition")), children : vec!{parse_expr(expr)}};
                     while_loop.children.push(conditional);
                     
@@ -449,7 +578,8 @@ impl AST {
 
                     match advance(&tokens, &mut index).expect("Error: Invalid token").t_type {
                         Token::TokenType::ASSIGN => {
-                            let expr = match_expr(&tokens, index);
+                            index+=1;
+                            let expr = match_expr(&tokens, &mut index);
                             let assignment = Value{v_type : ValueType::ASSIGNMENT, name : name.clone(), children : vec!{parse_expr(expr)}};
                             blocks.get(curr_name.as_str()).expect("Error: Assignment out of block").borrow_mut().children.push(assignment);
                         },
@@ -477,7 +607,8 @@ impl AST {
                     match block_stack.pop().expect("Error: Invalid }") {
                         Statement::FUNCTION(val) => {
                             let tmp = val.clone();
-                            ast.functions.push((*blocks.get(tmp.as_str()).expect("Error: function not defined")).borrow().clone());
+                            self.functions.push((*blocks.get(tmp.as_str()).expect("Error: function not defined")).borrow().clone());
+                            println!("Added function, statements: {}", (*blocks.get(tmp.as_str()).expect("Error: function not defined")).borrow().clone().children.len());
                         },
                         Statement::WHILE(val) => {
                             let tmp = val.clone();
@@ -511,8 +642,13 @@ impl AST {
                         }
                     }
                 }
-                _ => {panic!("Error: Invalid token")}
+                _ => {
+                    println!("Token: {}", &tokens[index].clone().name.expect("errors"));
+                    panic!("Error: Invalid token")
+                }
             }
+
+            index+=1;
         }
     }
 }

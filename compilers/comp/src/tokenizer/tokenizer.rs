@@ -105,13 +105,40 @@ impl TokenType {
             _ => {false}
         }
     }
+
+    pub fn is_openbracket(&self) -> bool {
+        match self {
+            TokenType::OPENBRACKET => {true},
+            _ => {false}
+        }
+    }
+
+    pub fn is_identifier(&self) -> bool {
+        match self {
+            TokenType::IDENTIFIER => {true},
+            _ => {false}
+        }
+    }
+
+    pub fn is_comma(&self) -> bool {
+        match self {
+            TokenType::COMMA => {true},
+            _ => {false}
+        }
+    }
+
+    pub fn is_closebracket(&self) -> bool {
+        match self {
+            TokenType::CLOSEBRACKET => {true},
+            _ => {false}
+        }
+    }
 }
 
 fn match_next(list : &Vec<char>, index : usize, op : &str) -> bool {
     let mut curr = 0;
     let op_list : Vec<char> = op.chars().collect();
-
-    while curr < list.len() {
+    while curr < op_list.len() {
             if list[index + curr] != op_list[curr] {
                 return false;
             }
@@ -126,11 +153,9 @@ pub fn tokenize(inp : String) -> Vec<Token> {
     let mut tok_list : Vec<Token> = Vec::new();
     let inp_list : Vec<char> = inp.chars().collect();
     let mut index : usize = 0;
-
     while index < inp_list.len() {
-
         let curr = inp_list[index];
-
+        println!("current: {}", curr);
         if curr.is_whitespace() {
             index += 1;
             continue;
@@ -139,7 +164,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
             if match_next(&inp_list, index, "if") {
                 tok_list.push(Token {
                     t_type : TokenType::IF,
-                    name : None
+                    name : Some(String::from("if"))
                 });
                 
                 index+=2;
@@ -147,7 +172,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
             else if match_next(&inp_list, index, "else") {
                 tok_list.push(Token {
                     t_type : TokenType::ELSE,
-                    name : None
+                    name : Some(String::from("else"))
                 });
                 
                 index+=4;
@@ -155,7 +180,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
             else if match_next(&inp_list, index, "while") {
                 tok_list.push(Token {
                     t_type : TokenType::WHILE,
-                    name : None
+                    name : Some(String::from("while"))
                 });
                 
                 index+=5;
@@ -163,7 +188,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
             else if match_next(&inp_list, index, "num") {
                 tok_list.push(Token {
                     t_type : TokenType::NUM,
-                    name : None
+                    name : Some(String::from("num"))
                 });
                 
                 index+=3;
@@ -171,7 +196,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
             else if match_next(&inp_list, index, "str") {
                 tok_list.push(Token {
                     t_type : TokenType::STR,
-                    name : None
+                    name : Some(String::from("str"))
                 });
                 
                 index+=3;
@@ -179,7 +204,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
             else if match_next(&inp_list, index, "list") {
                 tok_list.push(Token {
                     t_type : TokenType::LIST,
-                    name : None
+                    name : Some(String::from("list"))
                 });
                 
                 index+=4;
@@ -187,7 +212,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
             else if match_next(&inp_list, index, "function") {
                 tok_list.push(Token {
                     t_type : TokenType::FUNCTION,
-                    name : None
+                    name : Some(String::from("function"))
                 });
                 
                 index+=8;
@@ -195,7 +220,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
             else if match_next(&inp_list, index, "goto") {
                 tok_list.push(Token {
                     t_type : TokenType::GOTO,
-                    name : None
+                    name : Some(String::from("goto"))
                 });
                 
                 index+=4;
@@ -203,7 +228,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
             else if match_next(&inp_list, index, "and") {
                 tok_list.push(Token {
                     t_type : TokenType::AND,
-                    name : None
+                    name : Some(String::from("and"))
                 });
                 
                 index+=3;
@@ -228,7 +253,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
 
                 let mut tmp = String::from("");
 
-                while !inp_list[index].is_alphanumeric() {
+                while inp_list[index].is_alphanumeric() {
                     tmp.push(inp_list[index]);
                     index+=1;
                 }
@@ -243,7 +268,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
 
             let mut tmp = String::from("");
 
-            while !inp_list[index].is_numeric() {
+            while inp_list[index].is_numeric() {
                 tmp.push(inp_list[index]);
                 index+=1
             }
@@ -258,7 +283,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
                 if inp_list[index+1] == '=' {
                     tok_list.push(Token {
                         t_type : TokenType::EQUAL,
-                        name : None
+                        name : Some(String::from("=="))
                     });
                     index+=2;
                 }
@@ -266,7 +291,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
                 else {
                     tok_list.push(Token {
                         t_type : TokenType::ASSIGN,
-                        name : None
+                        name : Some(String::from("="))
                     });
                     index+=1;
                 }
@@ -275,7 +300,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
                 if inp_list[index+1] == '=' {
                     tok_list.push(Token {
                         t_type : TokenType::LESSEQ,
-                        name : None
+                        name : Some(String::from("<="))
                     });
                     index+=2;
                 }
@@ -283,7 +308,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
                 else {
                     tok_list.push(Token {
                         t_type : TokenType::LESS,
-                        name : None
+                        name : Some(String::from("<"))
                     });
                     index+=1;
                 }
@@ -292,7 +317,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
                 if inp_list[index+1] == '=' {
                     tok_list.push(Token {
                         t_type : TokenType::GREATEREQ,
-                        name : None
+                        name : Some(String::from(">="))
                     });
                     index+=2;
                 }
@@ -300,7 +325,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
                 else {
                     tok_list.push(Token {
                         t_type : TokenType::GREATER,
-                        name : None
+                        name : Some(String::from(">"))
                     });
                     index+=1;
                 }
@@ -309,7 +334,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
                 if inp_list[index+1] == '=' {
                     tok_list.push(Token {
                         t_type : TokenType::NOTEQ,
-                        name : None
+                        name : Some(String::from("!="))
                     });
                     index+=2;
                 }
@@ -317,7 +342,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
                 else {
                     tok_list.push(Token {
                         t_type : TokenType::NOT,
-                        name : None
+                        name : Some(String::from("!"))
                     });
                     index+=1;
                 }
@@ -325,7 +350,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
             else if curr == '+' {
                 tok_list.push(Token {
                     t_type : TokenType::ADD,
-                    name : None
+                    name : Some(String::from("+"))
                 });
                 
                 index+=1;
@@ -333,21 +358,21 @@ pub fn tokenize(inp : String) -> Vec<Token> {
             else if curr == '-' {
                 tok_list.push(Token {
                     t_type : TokenType::SUB,
-                    name : None
+                    name : Some(String::from("-"))
                 });
                 index+=1;
             }
             else if curr == '/' {
                 tok_list.push(Token {
                         t_type : TokenType::DIV,
-                        name : None
+                        name : Some(String::from("/"))
                     });
                     index+=1;
             }
             else if curr == '*' {
                 tok_list.push(Token {
                     t_type : TokenType::MUL,
-                    name : None
+                    name : Some(String::from("*"))
                 });
                     
                 index+=1;
@@ -355,7 +380,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
             else if curr == '%' {
                 tok_list.push(Token {
                     t_type : TokenType::MOD,
-                    name : None
+                    name : Some(String::from("%"))
                 });
                 
                 index+=1;
@@ -363,14 +388,14 @@ pub fn tokenize(inp : String) -> Vec<Token> {
             else if curr == '(' {
                 tok_list.push(Token {
                         t_type : TokenType::OPENBRACKET,
-                        name : None
+                        name : Some(String::from("("))
                     });
                     index+=1;
             }
             else if curr == ')' {
                 tok_list.push(Token {
                     t_type : TokenType::CLOSEBRACKET,
-                    name : None
+                    name : Some(String::from(")"))
                 });
                     
                 index+=1;
@@ -378,7 +403,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
             else if curr == '{' {
                 tok_list.push(Token {
                     t_type : TokenType::OPENBLOCK,
-                    name : None
+                    name : Some(String::from("{"))
                 });
                 
                 index+=1;
@@ -386,7 +411,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
             else if curr == '}' {
                 tok_list.push(Token {
                     t_type : TokenType::CLOSEBLOCK,
-                    name : None
+                    name : Some(String::from("}"))
                 });
                     
                 index+=1;
@@ -394,7 +419,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
             else if curr == ';' {
                 tok_list.push(Token {
                     t_type : TokenType::SEMICOLON,
-                    name : None
+                    name : Some(String::from(";"))
                 });
                 
                 index+=1;
@@ -402,7 +427,7 @@ pub fn tokenize(inp : String) -> Vec<Token> {
             else if curr == ',' {
                 tok_list.push(Token {
                     t_type : TokenType::COMMA,
-                    name : None
+                    name : Some(String::from(","))
                 });
                 
                 index+=1;
