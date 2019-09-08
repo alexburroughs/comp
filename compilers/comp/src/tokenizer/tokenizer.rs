@@ -53,9 +53,10 @@ impl TokenType {
         match self {
             TokenType::OR | TokenType::XOR => {1},
             TokenType::AND => {2},
-            TokenType::ADD | TokenType::SUB => {3},
-            TokenType::MUL | TokenType::DIV | TokenType::MOD => {4},
-            TokenType::NOT => {5},
+            TokenType::LESS | TokenType::LESSEQ | TokenType::GREATER | TokenType::GREATEREQ | TokenType::EQUAL => {3}
+            TokenType::ADD | TokenType::SUB => {4},
+            TokenType::MUL | TokenType::DIV | TokenType::MOD => {5},
+            TokenType::NOT => {6},
             _ => {-1}
         }
     }
@@ -130,6 +131,13 @@ impl TokenType {
     pub fn is_closebracket(&self) -> bool {
         match self {
             TokenType::CLOSEBRACKET => {true},
+            _ => {false}
+        }
+    }
+
+    pub fn is_string(&self) -> bool {
+        match self {
+            TokenType::STRING => {true},
             _ => {false}
         }
     }

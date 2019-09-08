@@ -48,4 +48,6 @@ fn main() {
     println!("Functions: {}", tree.functions.len());
     println!("Args: {}", tree.functions[0].children[0].children.len());
     println!("Converted to tree");
+
+    println!("Done\n{}", Generator::generate_code(&mut tree));
 }   

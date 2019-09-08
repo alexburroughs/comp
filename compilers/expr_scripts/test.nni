@@ -1,4 +1,4 @@
-function a (iden1, iden2) {
+function a (iden1 num, iden2 str) {
 	num a;
 	a = 23;
 	num b = 9;

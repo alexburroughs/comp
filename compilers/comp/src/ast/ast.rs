@@ -97,13 +97,20 @@ fn parse_args(tokens : Vec<Token::Token>) -> Value {
             ArgState::Next => {
                 if tokens[x].t_type.is_identifier() {
                     state = ArgState::Arg;
+                    let vtype = tokens.get(x+1).expect("Error: Can't get argument type");
                     base.children.push(
                         Value {
-                            v_type : ValueType::ARGUMENT,
+                            v_type : match vtype.t_type {
+                                Token::TokenType::NUM => {ValueType::NUM},
+                                Token::TokenType::STR => {ValueType::STR},
+                                Token::TokenType::LIST => {ValueType::LIST},
+                                _ => {panic!("Error: Invalid argument type")}
+                            },
                             name: tokens[x].name.clone(),
                             children : Vec::new()
                         }
                     );
+                    x+=1;
                 }
                 else if tokens[x].t_type.is_closebracket() {
                     state = ArgState::End;
@@ -434,6 +441,15 @@ enum Statement {
     WHILE(String)
 }
 
+impl Statement {
+    pub fn is_if(&self) -> bool {
+        match self {
+            Statement::IF(_) => {true},
+            _=> {false}
+        }
+    }
+}
+
 pub struct AST {
     pub functions : Vec<Value>
 }
@@ -448,7 +464,7 @@ impl AST {
     pub fn generate_tree(&mut self, tokens: Vec<Token::Token>) {
 
         let mut index = 0;
-        let mut curr_func = Value::new_function();
+        let mut curr_func : Value;
         let mut curr_name = String::from("");
         let mut blocks : HashMap<String, RefCell<Value>> = HashMap::new();
         let mut block_stack : Vec<Statement> = Vec::new();
@@ -487,9 +503,13 @@ impl AST {
                     let name = advance(&tokens, &mut index).expect("Error: Invalid token").name;
 
                     let declaration = Value {
-                        v_type : ValueType::NUM,
-                        name : name.clone(),
-                        children : Vec::new()
+                        v_type : ValueType::DECLARATION,
+                        name : None,
+                        children : vec! [Value {
+                            v_type : ValueType::NUM,
+                            name : name.clone(),
+                            children : Vec::new()
+                        }]
                     };
 
                     blocks.get(curr_name.as_str()).expect("Error: Declaration out of block").borrow_mut().children.push(declaration);
@@ -498,6 +518,9 @@ impl AST {
                         Token::TokenType::ASSIGN => {
                             index+=1;
                             let expr = match_expr(&tokens, &mut index);
+                            if expr.len() != 1 || !expr[0].t_type.is_string() {
+                                panic!("Error: Can only assign a string to a string :-| ");
+                            }
                             let assignment = Value{v_type : ValueType::ASSIGNMENT, name : name.clone(), children : vec!{parse_expr(expr)}};
                             blocks.get(curr_name.as_str()).expect("Error: Assignment out of block").borrow_mut().children.push(assignment);
                         },
@@ -511,9 +534,13 @@ impl AST {
                     let name = advance(&tokens, &mut index).expect("Error: Invalid token").name;
 
                     let declaration = Value {
-                        v_type : ValueType::STR,
-                        name : name.clone(),
-                        children : Vec::new()
+                        v_type : ValueType::DECLARATION,
+                        name : None,
+                        children : vec! [Value {
+                            v_type : ValueType::STR,
+                            name : name.clone(),
+                            children : Vec::new()
+                        }]
                     };
 
                     blocks.get(curr_name.as_str()).expect("Error: Declaration out of block").borrow_mut().children.push(declaration);
@@ -532,9 +559,13 @@ impl AST {
                     let name = advance(&tokens, &mut index).expect("Error: Invalid token").name;
 
                     let declaration = Value {
-                        v_type : ValueType::LIST,
-                        name : name.clone(),
-                        children : Vec::new()
+                        v_type : ValueType::DECLARATION,
+                        name : None,
+                        children : vec! [Value {
+                            v_type : ValueType::LIST,
+                            name : name.clone(),
+                            children : Vec::new()
+                        }]
                     };
 
                     blocks.get(curr_name.as_str()).expect("Error: Declaration out of block").borrow_mut().children.push(declaration);
@@ -571,6 +602,20 @@ impl AST {
                     blocks.insert(name.clone(), RefCell::from(while_loop));
                     curr_name = name.clone();
                     conditional_num+=1;
+                },
+                Token::TokenType::ELSE => {
+
+                    if !block_stack.last().expect("Error: else not in an if block").is_if() {
+                        panic!("Error: else not in an if block");
+                    }
+
+                    blocks.get(curr_name.as_str()).expect("Error: Assignment out of block").borrow_mut().children.push(
+                        Value {
+                            v_type : ValueType::ELSE,
+                            name : None,
+                            children : Vec::new()
+                        });
+
                 },
                 Token::TokenType::IDENTIFIER => {
 
