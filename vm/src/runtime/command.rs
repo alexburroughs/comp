@@ -30,7 +30,11 @@ pub enum CommandType {
     SYS,
     CALL,
     ADDR,
-    RET
+    RET,
+    LS_ADD,
+    LS_GET,
+    LS_RM,
+    LS_SIZE
 }
 
 impl fmt::Display for CommandType {

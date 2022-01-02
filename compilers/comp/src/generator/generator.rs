@@ -80,7 +80,64 @@ fn parse_expression(children : &Vec<SyntaxTree::Value>,
     var_num : &mut u32, 
     ret_val : &mut u32) -> String {
 
-    let ret = String::from("");
+    let mut ret = String::from("");
+    let mut inits = String::from("");
+
+    for x in children {
+        match x.v_type {
+            SyntaxTree::ValueType::CALL => {
+                
+            },
+            SyntaxTree::ValueType::VARIABLE => {
+                ret.push_str(&format!("PUSH {}\n",
+                    vars.get(&x.name
+                    .clone()
+                    .expect("Error: Variable in expression doesn't have a name"))
+                    .unwrap().0));
+
+            },
+            SyntaxTree::ValueType::ADD => {
+                ret.push_str("ADD\n");
+            },
+            SyntaxTree::ValueType::SUB => {
+                ret.push_str("SUB\n");
+            },
+            SyntaxTree::ValueType::DIV => {
+                ret.push_str("DIV\n");
+            },
+            SyntaxTree::ValueType::MUL => {
+                ret.push_str("MUL\n");
+            },
+            SyntaxTree::ValueType::MOD => {
+                ret.push_str("MOD\n");
+            },
+            SyntaxTree::ValueType::AND => {
+                ret.push_str("AND\n");
+            },
+            SyntaxTree::ValueType::OR => {
+                ret.push_str("OR\n");
+            },
+            SyntaxTree::ValueType::XOR => {
+                ret.push_str("XOR\n");
+            },
+            SyntaxTree::ValueType::EQ => {
+                ret.push_str("CMP\n");
+            },
+            SyntaxTree::ValueType::GREATER => {
+                ret.push_str("CMPG\n");
+            },
+            SyntaxTree::ValueType::GREATEREQ => {
+                ret.push_str("CMPG\n");
+            },
+            SyntaxTree::ValueType::LESS => {
+                ret.push_str("CMPL\n");
+            },
+            SyntaxTree::ValueType::LESSEQ => {
+                ret.push_str("CMPL\n");
+            },
+            _ => {}
+        }
+    }
 
     ret
 

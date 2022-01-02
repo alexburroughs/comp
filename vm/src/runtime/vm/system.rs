@@ -62,5 +62,5 @@ impl<'a> System<'a> {
             data::ValueType::STR(_) => {self.mem_stack.set(ind,data::ValueType::STR(inp));},
             _ => {panic!("Error: Can't input to list")}
         }
-    }   
+    }
 }

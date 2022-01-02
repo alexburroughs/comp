@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use std::string::ToString;
 use super::command;
+//use std::string::ToString;
 
 mod data;
 mod system;
@@ -38,6 +38,7 @@ impl Vm {
 
             //println!("{} : {}", x, com.c_type.to_string());
 
+            // match on the command type
             match com.c_type {
                 command::CommandType::FS => {
                     let tmp = (f_map
@@ -167,13 +168,72 @@ impl Vm {
 
                     x = tmp.0;
                     for y in 1..com.args.len() {
-                        self.mem_stack.push_arg(com.args.get(y).expect("Error: can't unwrap call argument").parse().expect("Error: Invalid argument to call"));
+                        self.mem_stack.push_arg(com.args
+                                                   .get(y)
+                                                   .expect("Error: can't unwrap call argument")
+                                                   .parse()
+                                                   .expect("Error: Invalid argument to call"));
                     }
 
                     self.scope_stack.push(&mut self.mem_stack, last_x);
                 },
+                command::CommandType::LS_ADD => {
+                    self.mem_stack.ls_add(
+                        com.args.get(0)
+                            .expect("Error: Invalid number of arguments to ls_add")
+                            .parse()
+                            .expect("Error: Invalid argument to ls_add"),
+                        com.args.get(1)
+                            .expect("Error: Invalid number of arguments to ls_add")
+                            .parse()
+                            .expect("Error: Invalid argument to ls_add")
+                    );
+
+                },
+                command::CommandType::LS_GET => {
+                    self.mem_stack.ls_get(
+                        com.args.get(0)
+                            .expect("Error: Invalid number of arguments to ls_get")
+                            .parse()
+                            .expect("Error: Invalid argument to ls_get"),
+                        com.args.get(1)
+                            .expect("Error: Invalid number of arguments to ls_get")
+                            .parse()
+                            .expect("Error: Invalid argument to ls_get"),
+                        com.args.get(2)
+                            .expect("Error: Invalid number of arguments to ls_get")
+                            .parse()
+                            .expect("Error: Invalid argument to ls_get"),
+
+                    )
+                },
+                command::CommandType::LS_RM => {
+                    self.mem_stack.ls_rm(
+                        com.args.get(0)
+                            .expect("Error: Invalid number of arguments to ls_get")
+                            .parse()
+                            .expect("Error: Invalid argument to ls_get"),
+                        com.args.get(1)
+                            .expect("Error: Invalid number of arguments to ls_get")
+                            .parse()
+                            .expect("Error: Invalid argument to ls_get")
+                    );
+                },
+                command::CommandType::LS_SIZE => {
+                    self.mem_stack.ls_size(
+                        com.args.get(0)
+                            .expect("Error: Invalid number of arguments to ls_size")
+                            .parse()
+                            .expect("Error: Invalid argument to ls_size"),
+                        com.args.get(1)
+                            .expect("Error: Invalid number of arguments to ls_size")
+                            .parse()
+                            .expect("Error: Invalid argument to ls_size")
+                    )
+                },
                 command::CommandType::RET => {},
                 command::CommandType::ADDR => {}
+
             }
 
             x+=1;

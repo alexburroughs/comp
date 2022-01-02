@@ -1,0 +1,27 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "gradle",
+			"id": "/home/alex/Documents/github/comp/compilers/java-compbuildDependentsjava-comp",
+			"script": "buildDependents",
+			"description": "Assembles and tests this project and all projects that depend on it.",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"project": "java-comp",
+			"buildFile": "/home/alex/Documents/github/comp/compilers/java-comp/build.gradle",
+			"rootProject": "java-comp",
+			"path": "",
+			"projectFolder": "/home/alex/Documents/github/comp/compilers/java-comp",
+			"workspaceFolder": "/home/alex/Documents/github/comp/compilers/java-comp",
+			"args": "",
+			"javaDebug": false,
+			"problemMatcher": [
+				"$gradle"
+			],
+			"label": "gradle: buildDependents"
+		}
+	]
+}

@@ -82,6 +82,9 @@ pub fn tokenize(in_str : &String) -> (Vec<command::Command>, HashMap<&str, (usiz
                 a_list.insert(com_args[1], tmp);
             },
             "RET" => {curr_com_type = command::CommandType::RET},
+            "LS_ADD" => {curr_com_type = command::CommandType::LS_ADD},
+            "LS_GET" => {curr_com_type = command::CommandType::LS_GET},
+            "LS_RM" => {curr_com_type = command::CommandType::LS_RM},
             "" => {continue}
             _ => {panic!("Error: Invalid command \"{}\" ", com_args[0]);}
         }

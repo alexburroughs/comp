@@ -182,8 +182,58 @@ impl MemStack {
     }
 
     pub fn set(&mut self, ind : usize, val : ValueType) {
-        self.val.get(ind).expect("Error: Memory pointer doesn't exist");
+        self.val.get(ind + self.bos).expect("Error: Memory pointer doesn't exist");
         self.val[ind + self.bos] = val;
+    }
+
+    pub fn ls_add(&mut self, ind : usize, val : usize) {
+        self.val.get(ind + self.bos).expect("Error: Memory pointer doesn't exist");
+        let tmp = self.val[val + self.bos].clone();
+        match &mut self.val[ind + self.bos] {
+            ValueType::LIST(v) => {v.push(tmp)},
+            _ => {panic!("Error: Non list passed to list function ls_add")}
+        }
+    }
+
+    pub fn ls_get(&mut self, ind : usize, src : usize, dest : usize) {
+        self.val.get(ind + self.bos).expect("Error: Memory pointer doesn't exist");
+        let dest_val = self.val.get(dest + self.bos).expect("Error: Destination pointer doesn't exist").clone();
+        match &mut self.val[ind + self.bos] {
+            ValueType::LIST(v) => {
+                let tmp = v.get(src).expect("Error: Source pointer doesn't exist");
+                if std::mem::discriminant(tmp) == std::mem::discriminant(&dest_val) {
+                    self.val[dest + self.bos] = tmp.clone();
+                }
+                else {
+                    panic!("Error: Mismatched types source and destination")
+                }
+            },
+            _ => {panic!("Error: Non list passed to list function ls_get")}
+        }
+    }
+
+    pub fn ls_rm(&mut self, ind : usize, src : usize) {
+        
+        self.val.get(ind + self.bos).expect("Error: Memory pointer doesn't exist");
+        
+        match &mut self.val[ind + self.bos] {
+            ValueType::LIST(v) => {
+                v.remove(src);
+            },
+            _ => {panic!("Error: Non list passed to list function ls_get")}
+        }
+    }
+
+    pub fn ls_size(&mut self, ind : usize, dest : usize) {
+        self.val.get(ind + self.bos).expect("Error: Memory pointer doesn't exist");
+        self.val.get(dest + self.bos).expect("Error: Destination pointer doesn't exist");
+        match &mut self.val[ind + self.bos] {
+            ValueType::LIST(v) => {
+                self.val[dest + self.bos] = ValueType::NUM(v.len() as f32);
+            },
+            _ => {panic!("Error: Non list passed to list function ls_get")}
+
+        }
     }
 
     pub fn push_arg(&mut self, ind : usize) {
