@@ -27,7 +27,7 @@ impl Vm {
         }
     }
 
-    pub fn run(&mut self, commands : Vec<command::Command>, f_map : HashMap<&str, (usize, usize)>, a_map : HashMap<&str, usize>) {
+    pub fn run(&mut self, commands : Vec<command::Command>, f_map : HashMap<String, (usize, usize)>, a_map : HashMap<String, usize>) {
 
         let mut x = 0;
 
@@ -68,6 +68,9 @@ impl Vm {
                             _ => {panic!("Error: Invalid type argument to new")}
                     });
                 },
+                command::CommandType::RM => {
+                    self.mem_stack.pop();
+                },
                 command::CommandType::SET => {
                     self.mem_stack.set(com.args
                         .get(0)
@@ -96,7 +99,21 @@ impl Vm {
                         }
                     );
                 },
+                command::CommandType::COPY => {
+                    self.mem_stack.copy(com.args
+                        .get(0)
+                        .expect("Error: Invalid number of arguments to copy")
+                        .parse()
+                        .expect("Error: Invalid argument to copy"),
+                        com.args
+                        .get(1)
+                        .expect("Error: Invalid number of arguments to copy")
+                        .parse()
+                        .expect("Error: Invalid argument to copy")
+                    );
+                },
                 command::CommandType::PUSH => {
+
                     self.num_stack.push(&self.mem_stack, com.args
                         .get(0)
                         .expect("Error: Invalid number of arguments to push")
@@ -148,11 +165,11 @@ impl Vm {
                 },
                 command::CommandType::IFEQ => {
                     if self.num_stack.ifeq() {
-                        x = a_map.get(&com.args[0].as_str()).expect("Error: invalid address").clone();
+                        x = a_map.get(&com.args[0]).expect("Error: invalid address").clone();
                     }
                 },
                 command::CommandType::JMP => {
-                    x = a_map.get(&com.args[0].as_str()).expect("Error: invalid address").clone();
+                    x = a_map.get(&com.args[0]).expect("Error: invalid address").clone();
                 },
                 command::CommandType::SYS => {
                     let mut sys = system::System::new(&mut self.mem_stack, &mut self.num_stack);
@@ -185,8 +202,7 @@ impl Vm {
                             .expect("Error: Invalid argument to ls_add"),
                         com.args.get(1)
                             .expect("Error: Invalid number of arguments to ls_add")
-                            .parse()
-                            .expect("Error: Invalid argument to ls_add")
+                            .to_string()
                     );
 
                 },

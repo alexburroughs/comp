@@ -10,6 +10,7 @@ pub enum CommandType {
     FS,
     FE,
     NEW,
+    RM,
     SET,
     PUSH,
     POP,
@@ -34,7 +35,8 @@ pub enum CommandType {
     LS_ADD,
     LS_GET,
     LS_RM,
-    LS_SIZE
+    LS_SIZE,
+    COPY
 }
 
 impl fmt::Display for CommandType {

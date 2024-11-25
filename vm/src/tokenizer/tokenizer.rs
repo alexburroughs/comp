@@ -2,29 +2,58 @@ use super::super::runtime::command;
 use std::collections::HashMap;
 use std::str;
 
-pub fn tokenize(in_str : &String) -> (Vec<command::Command>, HashMap<&str, (usize,usize)>, HashMap<&str, usize>)  {
+fn split(str : &str, splitter : char) -> Vec<String>{
+    let mut escape = false;
+    let mut in_str = false;
+    let mut ret = Vec::new();
+    let mut current_str = String::new();
+    for c in str.chars() {
+        if escape == false && c == '\\' {
+            escape = true;
+            continue;
+        }
+        if c == '\"' && escape == false {
+            in_str = !in_str;
+            continue;
+        }
+
+        if !in_str && c == splitter {
+            ret.push(current_str.clone());
+            current_str = String::new();
+        }
+        else {
+            current_str.push(c)
+        }
+
+        escape = false;
+    }
+    ret.push(current_str.clone());
+    return ret;
+}
+
+pub fn tokenize(in_str : &String) -> (Vec<command::Command>, HashMap<String, (usize,usize)>, HashMap<String, usize>)  {
 
     // seperate the code into commands
     let split_str = in_str.split("\n").collect::<Vec<_>>();
 
     // final list of commands and function map
     let mut commands : Vec<command::Command> = Vec::new();
-    let mut f_list : HashMap<&str, (usize, usize)> = HashMap::new();
-    let mut a_list : HashMap<&str, usize> = HashMap::new();
+    let mut f_list : HashMap<String, (usize, usize)> = HashMap::new();
+    let mut a_list : HashMap<String, usize> = HashMap::new();
 
     // loop through each line
     for curr_str in split_str {
 
         // seperate command and arguments
-        let mut com_args = curr_str.split(" ").collect::<Vec<_>>();
+        let mut com_args = split(curr_str, ' ');
         let mut arg_list : Vec<String> = Vec::new();
 
         let curr_com_type : command::CommandType;
 
-        //println!("{}", com_args[0]);
+        //println!("{}\n", com_args[0]);
 
         // map strings to commands
-        match com_args[0] {
+        match com_args[0].as_str() {
             
             // add function start to the function map
             "FS" => {
@@ -32,13 +61,13 @@ pub fn tokenize(in_str : &String) -> (Vec<command::Command>, HashMap<&str, (usiz
 
                 let mut i : (usize, usize);
 
-                match f_list.get(com_args[1]) {
+                match f_list.get(&com_args[1]) {
                     Some(val) => {i = *val},
                     None => {i = (0,0)}
                 }
 
                 i.0 = commands.len();
-                f_list.insert(com_args[1], i);
+                f_list.insert(com_args[1].clone(), i);
             },
 
             // add function end to the function map
@@ -46,17 +75,18 @@ pub fn tokenize(in_str : &String) -> (Vec<command::Command>, HashMap<&str, (usiz
                 curr_com_type = command::CommandType::FE;
 
                 let mut i : (usize, usize);
-
-                match f_list.get(com_args[1]) {
+               
+                match f_list.get(&com_args[1]) {
                     Some(val) => {i = *val},
                     None => {i = (0,0)}
                 }
                 
                 i.1 = commands.len();
-                f_list.insert(com_args[1], i);
+                f_list.insert(com_args[1].clone(), i);
                 
                 },
             "NEW" => {curr_com_type = command::CommandType::NEW},
+            "RM" => {curr_com_type = command::CommandType::RM},
             "SET" => {curr_com_type = command::CommandType::SET},
             "PUSH" => {curr_com_type = command::CommandType::PUSH},
             "POP" => {curr_com_type = command::CommandType::POP},
@@ -76,17 +106,23 @@ pub fn tokenize(in_str : &String) -> (Vec<command::Command>, HashMap<&str, (usiz
             "JMP" => {curr_com_type = command::CommandType::JMP},
             "SYS" => {curr_com_type = command::CommandType::SYS},
             "CALL" => {curr_com_type = command::CommandType::CALL},
+            "COPY" => {curr_com_type = command::CommandType::COPY},
             "ADDR" => {             
                 curr_com_type = command::CommandType::ADDR;
                 let tmp = commands.len();
-                a_list.insert(com_args[1], tmp);
+                a_list.insert(com_args[1].clone(), tmp);
             },
             "RET" => {curr_com_type = command::CommandType::RET},
             "LS_ADD" => {curr_com_type = command::CommandType::LS_ADD},
             "LS_GET" => {curr_com_type = command::CommandType::LS_GET},
             "LS_RM" => {curr_com_type = command::CommandType::LS_RM},
             "" => {continue}
-            _ => {panic!("Error: Invalid command \"{}\" ", com_args[0]);}
+            _ => {
+                    if com_args[0].starts_with('#') {
+                        continue
+                    }
+                    panic!("Error: Invalid command \"{}\" ", com_args[0]);
+                }
         }
 
         // remove the command, keep the arguments
